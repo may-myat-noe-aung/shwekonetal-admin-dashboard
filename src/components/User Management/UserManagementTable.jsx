@@ -225,7 +225,7 @@ export default function UserTableWithSummary() {
                   paginatedUsers.map((u) => (
                     <tr
                       key={u.id}
-                      className="hover:bg-neutral-900/50 transition-colors"
+                      className="hover:bg-neutral-900/50 transition-colors "
                     >
                       <td className="px-3 py-2">
                         {u.photo ? (
@@ -260,12 +260,12 @@ export default function UserTableWithSummary() {
                       <td className="px-3 py-2">
                         <StatusBadge status={u.status} />
                       </td>
-                      <td className="px-3 py-2 flex justify-center gap-2">
+                      <td className="px-3 py-2">
                         <button
                           onClick={() => setViewUser(u)}
-                          className="p-1.5 rounded-lg hover:bg-neutral-800"
+                          className="flex items-center gap-1 px-2 py-1 bg-sky-600 hover:bg-sky-700 rounded text-white text-sm"
                         >
-                          <Eye className="h-4 w-4 text-sky-400" />
+                          <Eye className="h-4 w-4 " /> view
                         </button>
                       </td>
                     </tr>
@@ -401,7 +401,7 @@ export default function UserTableWithSummary() {
             </div>
           </div>
         )}
-{/*        {/* User Confirm Table */}
+        {/*        {/* User Confirm Table */}
         <UserConfirmTable />
       </div>
     </main>

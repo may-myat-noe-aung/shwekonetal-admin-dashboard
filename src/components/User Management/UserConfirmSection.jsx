@@ -38,42 +38,88 @@ export default function UserConfirmTable() {
     setShowPasscodeModal(true);
   };
 
+  // const confirmAction = async () => {
+  //   if (passcode === "1234") {
+  //     try {
+  //       const updatedStatus =
+  //         actionType === "approve" ? "approved" : "rejected";
+
+  //       // ✅ Update API
+  //       await fetch(`http://38.60.244.74:3000/users/${viewUser.id}`, {
+  //         method: "PUT",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ ...viewUser, status: updatedStatus }),
+  //       });
+
+  //       // ✅ Update UI
+  //       setUsers((prev) =>
+  //         prev.map((u) =>
+  //           u.id === viewUser.id ? { ...u, status: updatedStatus } : u
+  //         )
+  //       );
+
+  //       alert(
+  //         `${viewUser.fullname} ${
+  //           actionType === "approve" ? "approved ✅" : "rejected ❌"
+  //         }`
+  //       );
+
+  //       setShowPasscodeModal(false);
+  //       setViewUser(null);
+  //     } catch (err) {
+  //       console.error("Update failed:", err);
+  //       alert("Failed to update user ❌");
+  //     }
+  //   } else {
+  //     alert("Incorrect passcode ❌");
+  //   }
+  // };
+
   const confirmAction = async () => {
-    if (passcode === "1234") {
-      try {
-        const updatedStatus =
-          actionType === "approve" ? "approved" : "rejected";
+  if (passcode !== "1234") {
+    alert("Incorrect passcode ❌");
+    return;
+  }
 
-        // ✅ Update API
-        await fetch(`http://38.60.244.74:3000/users/${viewUser.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...viewUser, status: updatedStatus }),
-        });
-
-        // ✅ Update UI
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === viewUser.id ? { ...u, status: updatedStatus } : u
-          )
-        );
-
-        alert(
-          `${viewUser.fullname} ${
-            actionType === "approve" ? "approved ✅" : "rejected ❌"
-          }`
-        );
-
-        setShowPasscodeModal(false);
-        setViewUser(null);
-      } catch (err) {
-        console.error("Update failed:", err);
-        alert("Failed to update user ❌");
-      }
-    } else {
-      alert("Incorrect passcode ❌");
+  try {
+    if (actionType === "approve") {
+      // PATCH request to approve endpoint
+      const res = await fetch(
+        `http://38.60.244.74:3000/users/approve/${viewUser.id}`,
+        { method: "PATCH" }
+      );
+      if (!res.ok) throw new Error("Failed to approve user");
+    } else if (actionType === "reject") {
+      // PATCH request to reject endpoint (if exists)
+      const res = await fetch(
+        `http://38.60.244.74:3000/users/reject/${viewUser.id}`,
+        { method: "PATCH" }
+      );
+      if (!res.ok) throw new Error("Failed to reject user");
     }
-  };
+
+    // Update UI
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === viewUser.id
+          ? { ...u, status: actionType === "approve" ? "approved" : "rejected" }
+          : u
+      )
+    );
+
+    alert(
+      `${viewUser.fullname} ${
+        actionType === "approve" ? "approved ✅" : "rejected ❌"
+      }`
+    );
+
+    setShowPasscodeModal(false);
+    setViewUser(null);
+  } catch (err) {
+    console.error(err);
+    alert("Action failed ❌");
+  }
+};
 
   return (
     <div className="bg-neutral-900 p-6 rounded-2xl shadow-lg w-full">

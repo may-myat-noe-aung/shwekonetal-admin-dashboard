@@ -71,6 +71,10 @@ const SalesDashboard = () => {
   const [chartData, setChartData] = useState([]);
 
   // --- Fetch Real API Data ---
+  // --- add this new state with your other states ---
+  const [goldTotal, setGoldTotal] = useState("");
+
+  // --- update your fetchSales useEffect like this ---
   useEffect(() => {
     const fetchSales = async () => {
       try {
@@ -86,25 +90,18 @@ const SalesDashboard = () => {
             payment_phone: item.payment_phone || "-",
             method: item.method || "-",
             type: item.type || "sell",
-            gold: parseFloat(item.gold || 0),
+            gold: item.gold || "-",
+            yway: item.yway || 0,
             price: parseInt(item.price || 0),
             status: item.status || "pending",
-            photos:
-              item.photos && item.photos.length
-                ? item.photos
-                : [
-                    "/images/default1.jpg",
-                    "/images/default2.jpg",
-                    "/images/default3.jpg",
-                    "/images/default4.jpg",
-                    "/images/default5.jpg",
-                    "/images/default6.jpg",
-                  ],
+            photos: item.photos || [],
             date: item.created_at
               ? new Date(item.created_at)
               : new Date(Date.now() - i * 3600 * 1000),
           }));
+
           setSales(mapped);
+          setGoldTotal(json.goldTotal || "-"); // ✅ added line
         } else {
           throw new Error("Invalid data structure");
         }
@@ -122,9 +119,7 @@ const SalesDashboard = () => {
   useEffect(() => {
     const fetchChartData = async () => {
       try {
-        const res = await fetch(
-          "http://38.60.244.74:3000/sales/gold-times-today"
-        );
+        const res = await fetch("http://38.60.244.74:3000/gold-times-today");
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           setChartData(json.data);
@@ -158,43 +153,44 @@ const SalesDashboard = () => {
   // --- Sorted Sales (filtered first) ---
   const sortedSales = useMemo(() => {
     const sortable = [...filteredSales];
-if (sortConfig.key) {
-  sortable.sort((a, b) => {
-    let aVal, bVal;
+    if (sortConfig.key) {
+      sortable.sort((a, b) => {
+        let aVal, bVal;
 
-    // ✅ Special case: sorting by time only
-    if (sortConfig.key === "time") {
-      aVal =
-        a.date.getHours() * 3600 +
-        a.date.getMinutes() * 60 +
-        a.date.getSeconds();
-      bVal =
-        b.date.getHours() * 3600 +
-        b.date.getMinutes() * 60 +
-        b.date.getSeconds();
-    } else {
-      aVal = a[sortConfig.key];
-      bVal = b[sortConfig.key];
-      if (aVal instanceof Date) aVal = aVal.getTime();
-      if (bVal instanceof Date) bVal = bVal.getTime();
-      if (typeof aVal === "string") aVal = aVal.toLowerCase();
-      if (typeof bVal === "string") bVal = bVal.toLowerCase();
+        // ✅ Special case: sorting by time only
+        if (sortConfig.key === "time") {
+          aVal =
+            a.date.getHours() * 3600 +
+            a.date.getMinutes() * 60 +
+            a.date.getSeconds();
+          bVal =
+            b.date.getHours() * 3600 +
+            b.date.getMinutes() * 60 +
+            b.date.getSeconds();
+        } else {
+          aVal = a[sortConfig.key];
+          bVal = b[sortConfig.key];
+          if (aVal instanceof Date) aVal = aVal.getTime();
+          if (bVal instanceof Date) bVal = bVal.getTime();
+          if (typeof aVal === "string") aVal = aVal.toLowerCase();
+          if (typeof bVal === "string") bVal = bVal.toLowerCase();
+        }
+
+        if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
+      });
     }
-
-    if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-    return 0;
-  });
-}
 
     return sortable;
   }, [filteredSales, sortConfig]);
 
   // --- Derived Data (Summary + Charts) ---
   const totalGold = useMemo(
-    () => sales.reduce((sum, s) => sum + (s.gold || 0), 0),
+    () => sales.reduce((sum, s) => sum + (s.yway || 0), 0),
     [sales]
   );
+
   const totalPrice = useMemo(
     () => sales.reduce((sum, s) => sum + (s.price || 0), 0),
     [sales]
@@ -266,12 +262,20 @@ if (sortConfig.key) {
   };
 
   // --- Loading/Error UI ---
-  if (loading)
-    return (
-      <div className="flex items-center justify-center h-64 text-neutral-500">
-        Loading sales data...
+if (loading)
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-neutral-950 text-yellow-400">
+      <div className="relative">
+        <div className="h-14 w-14 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="absolute inset-0 blur-xl bg-yellow-500/30 rounded-full animate-pulse"></div>
       </div>
-    );
+      <p className="mt-6 text-lg font-semibold animate-pulse tracking-wide">
+        Loading Sales Data...
+      </p>
+      <p className="text-sm text-neutral-500 mt-1">Please wait a moment ⏳</p>
+    </div>
+  );
+
 
   if (error)
     return (
@@ -288,11 +292,12 @@ if (sortConfig.key) {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <SummaryCard
             title="Total Gold Weight"
-            value={`${totalGold.toFixed(2)} g`}
+            value={goldTotal || "-"} // ✅ changed this line
             sub="Total gold sold"
             icon={<BarChart3 size={20} />}
             accent="from-yellow-600/10 to-yellow-400/5"
           />
+
           <SummaryCard
             title="Total Transactions"
             value={sales.length}
@@ -401,7 +406,7 @@ if (sortConfig.key) {
                   { label: "User ID", key: "userid" },
                   { label: "Customer Name", key: "fullname" },
                   { label: "Type", key: "type" },
-                  { label: "Gold", key: "gold" },
+                  { label: "ကျပ် ပဲ ရွေး", key: "gold" },
                   { label: "Price", key: "price" },
                   { label: "Date", key: "date" }, // Date only
                   { label: "Time", key: "time" }, // Time only
@@ -411,7 +416,7 @@ if (sortConfig.key) {
                 ].map((col) => (
                   <th
                     key={col.key}
-                    className="text-left py-2 px-3 cursor-pointer select-none"
+                    className=" py-2 px-3 cursor-pointer select-none text-center"
                     onClick={() =>
                       col.key !== "details" && requestSort(col.key)
                     }
@@ -439,9 +444,9 @@ if (sortConfig.key) {
                 ))}
               </tr>
             </thead>
-            <tbody className="h-[500px]">
+            <tbody className="">
               {paginatedSales.length === 0 ? (
-                <tr>
+                <tr className="h-[490px]">
                   <td
                     colSpan={9} // number of table columns
                     className="text-center py-10 text-neutral-500"
@@ -453,22 +458,41 @@ if (sortConfig.key) {
                 paginatedSales.map((s) => (
                   <tr
                     key={s.id}
-                    className="border-b border-neutral-800 hover:bg-neutral-800/50"
+                    className="border-b border-neutral-800 hover:bg-neutral-800/50 h-[30px]"
                   >
                     <td className="py-2 px-3">{s.userid}</td>
                     <td className="py-2 px-3">{s.fullname}</td>
-                    <td className="py-2 px-3 capitalize">{s.type}</td>
+                    <td
+                      className={`py-1  px-3 capitalize font-semibold ${
+                        s.type === "buy"
+                          ? "text-green-400  px-2 "
+                          : "text-blue-400   px-2"
+                      }`}
+                    >
+                      {s.type}
+                    </td>
                     <td className="py-2 px-3">{s.gold}</td>
                     <td className="py-2 px-3">{s.price.toLocaleString()} Ks</td>
                     <td className="py-2 px-3">{s.date.toLocaleDateString()}</td>
                     <td className="py-2 px-3">{s.date.toLocaleTimeString()}</td>
 
                     <td className="py-2 px-3 capitalize">{s.method}</td>
-                    <td className="py-2 px-3 capitalize">{s.status}</td>
+                    <td
+                      className={`py-2 px-3 capitalize font-semibold ${
+                        s.status === "approved"
+                          ? "text-emerald-400  px-2"
+                          : s.status === "pending"
+                          ? "text-yellow-400 px-2"
+                          : "text-rose-400  px-2"
+                      }`}
+                    >
+                      {s.status}
+                    </td>
+
                     <td className="py-2 px-3">
                       <button
                         onClick={() => setSelectedTxn(s)}
-                        className="flex items-center gap-1 px-2 py-1 text-xs border border-neutral-700 rounded-md hover:bg-neutral-800"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-full bg-yellow-500 text-white hover:bg-yellow-400 transition-all duration-200 text-center"
                       >
                         <Info size={14} /> Details
                       </button>
@@ -527,7 +551,7 @@ if (sortConfig.key) {
 
         {/* --- Popup Card --- */}
         {selectedTxn && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="fixed -inset-6 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-full max-w-lg relative">
               {/* Header */}
               <button
@@ -557,8 +581,19 @@ if (sortConfig.key) {
                 </p>
                 <p>
                   <span className="text-neutral-400">Type -</span>{" "}
-                  {selectedTxn.type || "-"}
+                  <span
+                    className={`font-semibold px-2 py-1 rounded-full ${
+                      selectedTxn.type === "buy"
+                        ? "text-green-400 bg-green-900/20"
+                        : selectedTxn.type === "sell"
+                        ? "text-blue-400 bg-blue-900/20"
+                        : "text-neutral-300 bg-neutral-800/20"
+                    }`}
+                  >
+                    {selectedTxn.type || "-"}
+                  </span>
                 </p>
+
                 <p>
                   <span className="text-neutral-400">ကျပ် ပဲ ရွေး -</span>{" "}
                   {selectedTxn.gold}
@@ -573,8 +608,19 @@ if (sortConfig.key) {
                 </p>
                 <p>
                   <span className="text-neutral-400">Status -</span>{" "}
-                  {selectedTxn.status || "-"}
+                  <span
+                    className={`font-semibold px-2 py-1 rounded-full ${
+                      selectedTxn.status === "approved"
+                        ? "text-emerald-400 bg-emerald-900/20"
+                        : selectedTxn.status === "pending"
+                        ? "text-yellow-400 bg-yellow-900/20"
+                        : "text-rose-400 bg-rose-900/20"
+                    }`}
+                  >
+                    {selectedTxn.status || "-"}
+                  </span>
                 </p>
+
                 <p>
                   <span className="text-neutral-400">Date -</span>{" "}
                   {selectedTxn.date.toLocaleDateString()}
@@ -602,15 +648,24 @@ if (sortConfig.key) {
               {/* Photos (only if NOT sell) */}
               {selectedTxn.type !== "sell" && (
                 <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
-                  {selectedTxn.photos?.map((url, idx) => (
-                    <img
-                      key={idx}
-                      src={url}
-                      alt={`Photo ${idx + 1}`}
-                      onClick={() => setPreviewImg(url)}
-                      className="cursor-pointer rounded-lg border border-neutral-700 hover:scale-105 transition w-36 h-48 object-cover flex-shrink-0"
-                    />
-                  ))}
+                  {/* Photos (only if NOT sell) */}
+                  {selectedTxn.type !== "sell" && (
+                    <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
+                      {selectedTxn.photos?.map((fileName, idx) => (
+                        <img
+                          key={idx}
+                          src={`http://38.60.244.74:3000/uploads/${fileName}`} // prepend base URL
+                          alt={`Photo ${idx + 1}`}
+                          onClick={() =>
+                            setPreviewImg(
+                              `http://38.60.244.74:3000/uploads/${fileName}`
+                            )
+                          }
+                          className="cursor-pointer rounded-lg border border-neutral-700 hover:scale-105 transition w-36 h-48 object-cover flex-shrink-0"
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -718,28 +773,6 @@ if (sortConfig.key) {
                   Confirm
                 </button>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* --- Preview Modal --- */}
-        {previewImg && (
-          <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-50">
-            <div className="relative w-screen h-screen flex items-center justify-center">
-              {/* Close Button */}
-              <button
-                onClick={() => setPreviewImg(null)}
-                className="absolute top-4 right-6 text-white text-4xl font-bold z-50 hover:scale-110 transition"
-              >
-                ✕
-              </button>
-
-              {/* Image */}
-              <img
-                src={previewImg}
-                alt="Preview"
-                className="min-w-[15vw] min-h-[15vh] object-contain rounded-2xl shadow-2xl scale-[1.45] transition-transform duration-300"
-              />
             </div>
           </div>
         )}
