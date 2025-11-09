@@ -9,7 +9,9 @@ import {
   Shield,
   UserPlus,
 } from "lucide-react";
-import UserConfirmTable from "./UserConfirmSection";
+import SummaryCards from "./SummaryCards";
+import UserDetailModal from "./UserDetailModal.jsx";
+import UserConfirmTable from "./UserConfirmTable.jsx";
 
 export default function UserTableWithSummary() {
   const [users, setUsers] = useState([]);
@@ -44,18 +46,61 @@ export default function UserTableWithSummary() {
   const approvedCount = users.filter((u) => u.status === "approved").length;
   const rejectedCount = users.filter((u) => u.status === "rejected").length;
 
+  // Inside UserTableWithSummary
+  const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const newUsersCount = users.filter(
+    (u) => u.createdAt && u.createdAt.slice(0, 10) === today
+  ).length;
+
   const handleDelete = async (user) => {
-    if (!window.confirm(`Delete ${user.fullname}?`)) return;
+    if (!user) return;
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${user.fullname}?`
+    );
+    if (!confirmed) return;
+
     try {
-      await fetch(`http://38.60.244.74:3000/users/${user.id}`, {
+      const res = await fetch(`http://38.60.244.74:3000/users/${user.id}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
+
+      if (!res.ok) throw new Error("Failed to delete user");
+
+      // Remove user from state
       setUsers((prev) => prev.filter((u) => u.id !== user.id));
       alert(`${user.fullname} deleted ✅`);
       setViewUser(null);
     } catch (err) {
       console.error(err);
       alert("Failed to delete user ❌");
+    }
+  };
+
+  const handleAction = async (action, user) => {
+    if (!user) return;
+
+    try {
+      const res = await fetch(`http://38.60.244.74:3000/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: action }), // "approve" or "reject"
+      });
+
+      if (!res.ok) throw new Error("Failed to update user status");
+
+      // Update local state
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, status: action } : u))
+      );
+
+      alert(`${user.fullname} ${action}d successfully ✅`);
+      setViewUser(null); // close modal
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update user ❌");
     }
   };
 
@@ -130,38 +175,23 @@ export default function UserTableWithSummary() {
   };
 
   return (
-    <main className="bg-neutral-950 text-neutral-100 h-full">
+    <main className="bg-neutral-950 text-neutral-100 ">
       <div className="mx-auto max-w-7xl px-4 py-6 space-y-6">
         {/* Summary Section */}
-        <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <SummaryCard
-            title="Total Users"
-            value={totalUsers}
-            icon={<Users className="h-5 w-5" />}
-            accent="from-sky-500/20 to-transparent"
-          />
-          <SummaryCard
-            title="Approved"
-            value={approvedCount}
-            icon={<ArrowUpRight className="h-5 w-5" />}
-            accent="from-emerald-500/20 to-transparent"
-          />
-          <SummaryCard
-            title="Rejected"
-            value={rejectedCount}
-            icon={<Filter className="h-5 w-5" />}
-            accent="from-rose-500/20 to-transparent"
-          />
-          <SummaryCard
-            title="New Users"
-            value="+"
-            icon={<UserPlus className="h-5 w-5" />}
-            accent="from-indigo-500/20 to-transparent"
-          />
-        </section>
+        <SummaryCards
+          total={totalUsers}
+          approved={approvedCount}
+          rejected={rejectedCount}
+          newUsers={newUsersCount}
+        />
 
         {/* User Table */}
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
+          <h3 className="text-xl font-semibold mb-4 text-white">
+            User Confirm and rejected
+          </h3>
+
+          {/* Search & Filters */}
           <div className="flex flex-col md:flex-row justify-between mb-3 gap-3">
             <input
               type="text"
@@ -173,7 +203,7 @@ export default function UserTableWithSummary() {
               }}
               className="rounded-full bg-neutral-900 border border-neutral-800 px-3 py-1.5 text-sm w-full md:w-64"
             />
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {["All", "Normal", "Promotor"].map((r) => (
                 <button
                   key={r}
@@ -193,8 +223,9 @@ export default function UserTableWithSummary() {
             </div>
           </div>
 
-          <div className="overflow-auto rounded-xl border border-neutral-800">
-            <table className="min-w-full text-sm text-center">
+          {/* Table */}
+          <div className="overflow-x-auto rounded-xl border border-neutral-800">
+            <table className="min-w-[800px] md:min-w-full text-sm text-center">
               <thead className="bg-neutral-900/80">
                 <tr className="text-white">
                   {[
@@ -208,7 +239,7 @@ export default function UserTableWithSummary() {
                     "Status",
                     "Action",
                   ].map((h) => (
-                    <th key={h} className="px-3 py-2">
+                    <th key={h} className="px-3 py-2 ">
                       {h}
                     </th>
                   ))}
@@ -225,7 +256,7 @@ export default function UserTableWithSummary() {
                   paginatedUsers.map((u) => (
                     <tr
                       key={u.id}
-                      className="hover:bg-neutral-900/50 transition-colors "
+                      className="hover:bg-neutral-900/50 transition-colors"
                     >
                       <td className="px-3 py-2">
                         {u.photo ? (
@@ -251,10 +282,15 @@ export default function UserTableWithSummary() {
                       </td>
                       <td className="px-3 py-2">{u.fullname}</td>
                       <td className="px-3 py-2">{u.id_type}</td>
-                      <td className="px-3 py-2">{u.id_number}</td>
-                      <td className="px-3 py-2">{u.email}</td>
+                      <td className="px-3 py-2 break-words whitespace-normal">
+                        {u.id_number}
+                      </td>
+                      <td className="px-3 py-2 break-words whitespace-normal">
+                        {u.email}
+                      </td>
+
                       <td className="px-3 py-2">{u.phone}</td>
-                      <td className="px-3 py-2">
+                      <td className="px-3 py-2 break-words whitespace-normal">
                         {u.state} / {u.city}
                       </td>
                       <td className="px-3 py-2">
@@ -275,11 +311,11 @@ export default function UserTableWithSummary() {
             </table>
 
             {/* Pagination */}
-            <div className="flex justify-between px-4 py-2 text-sm text-neutral-400">
+            <div className="flex flex-col md:flex-row justify-between px-4 py-2 text-sm text-neutral-400 gap-2 md:gap-0">
               <p>
                 Page {totalPages === 0 ? 0 : page} of {totalPages}
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button
                   disabled={page === 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -323,86 +359,20 @@ export default function UserTableWithSummary() {
         </div>
 
         {/* Details Modal */}
-        {viewUser && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="bg-neutral-900 rounded-2xl shadow-2xl p-6 w-[520px] relative">
-              <button
-                onClick={() => setViewUser(null)}
-                className="absolute top-3 right-3 text-white/70 hover:text-white text-lg font-bold"
-              >
-                ✖
-              </button>
-              <div className="flex flex-col items-center mb-5">
-                {viewUser.photo ? (
-                  <img
-                    src={
-                      viewUser.photo.startsWith("http")
-                        ? viewUser.photo
-                        : `http://38.60.244.74:3000/uploads/${viewUser.photo}`
-                    }
-                    alt="Profile"
-                    className="w-20 h-20 rounded-full object-cover border-2 border-emerald-500 mb-3"
-                  />
-                ) : (
-                  <div className="w-20 h-20 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-xl mb-3">
-                    {viewUser.fullname
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()
-                      .slice(0, 3)}
-                  </div>
-                )}
-                <h3 className="text-lg font-semibold text-white">
-                  {viewUser.fullname}
-                </h3>
-                <p className="text-white/60 text-sm">{viewUser.email}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-white/80 text-sm mb-6">
-                <div>
-                  <p className="text-xs text-white/50">ID Type</p>
-                  {viewUser.id_type}
-                </div>
-                <div>
-                  <p className="text-xs text-white/50">ID Number</p>
-                  {viewUser.id_number}
-                </div>
-                <div>
-                  <p className="text-xs text-white/50">Phone</p>
-                  {viewUser.phone}
-                </div>
-                <div>
-                  <p className="text-xs text-white/50">State / City</p>
-                  {viewUser.state} / {viewUser.city}
-                </div>
-                <div>
-                  <p className="text-xs text-white/50">Address</p>
-                  {viewUser.address}
-                </div>
-                <div>
-                  <p className="text-xs text-white/50">Status</p>
-                  <StatusBadge status={viewUser.status} />
-                </div>
-              </div>
-              <div className="flex justify-end gap-4">
-                <button
-                  onClick={() => sendMessage(viewUser)}
-                  className="flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white text-sm font-medium"
-                >
-                  Message <Mail size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(viewUser)}
-                  className="flex items-center gap-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 rounded-lg text-white text-sm font-medium"
-                >
-                  Delete <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {/*        {/* User Confirm Table */}
-        <UserConfirmTable />
+    <UserDetailModal
+  viewUser={viewUser}
+  onClose={() => setViewUser(null)}
+  handleDelete={handleDelete}   // pass delete function
+  sendMessage={sendMessage}     // pass message function
+/>
+
+
+        {/* Confirm Modal */}
+        <UserConfirmTable
+          viewUser={viewUser}
+          onClose={() => setViewUser(null)}
+          handleAction={handleAction}
+        />
       </div>
     </main>
   );

@@ -102,8 +102,7 @@
 //     </div>
 //   );
 // }
-
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
@@ -120,12 +119,14 @@ export default function ReportBuySellRatio() {
   const fetchChartData = async () => {
     try {
       const res = await axios.get(`${API_BASE}/report-buy-sell-chart`);
-      if (res.data.success && Array.isArray(res.data.data)) {
-        // Convert API data to {date, buy, sell}
-        let chartData = res.data.data.map((item) => ({
+      const apiData = res.data.data;
+
+      if (Array.isArray(apiData)) {
+        // Convert API data
+        let chartData = apiData.map((item) => ({
           date: item[0],
-          buy: item[1],
-          sell: item[2],
+          buyGold: Number(item[1]) || 0,
+          sellGold: Number(item[2]) || 0,
         }));
 
         // Filter last 6 unique dates
@@ -135,27 +136,31 @@ export default function ReportBuySellRatio() {
         // Sum buy and sell amounts
         const totals = chartData.reduce(
           (acc, d) => {
-            acc.buy += d.buy;
-            acc.sell += d.sell;
+            acc.buyGold += d.buyGold;
+            acc.sellGold += d.sellGold;
             return acc;
           },
-          { buy: 0, sell: 0 }
+          { buyGold: 0, sellGold: 0 }
         );
+
+        const totalSum = totals.buyGold + totals.sellGold || 1; // prevent divide by zero
 
         setData([
           {
-            name: "Buy",
-            value: totals.buy,
+            name: "Buy Gold",
+            value: totals.buyGold,
             color: "#22c55e",
-            percent: Math.round((totals.buy / (totals.buy + totals.sell)) * 100),
+            percent: Math.round((totals.buyGold / totalSum) * 100),
           },
           {
-            name: "Sell",
-            value: totals.sell,
+            name: "Sell Gold",
+            value: totals.sellGold,
             color: "#ef4444",
-            percent: Math.round((totals.sell / (totals.buy + totals.sell)) * 100),
+            percent: Math.round((totals.sellGold / totalSum) * 100),
           },
         ]);
+      } else {
+        console.warn("API returned invalid data format.");
       }
     } catch (err) {
       console.error("Error fetching chart data:", err);
@@ -171,9 +176,16 @@ export default function ReportBuySellRatio() {
       </div>
     );
 
+  if (data.length === 0)
+    return (
+      <div className="text-center py-10 text-neutral-400">
+        No data available for chart.
+      </div>
+    );
+
   return (
     <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-      <h3 className="font-semibold mb-2 text-yellow-400">Buy vs Sell Ratio</h3>
+      <h3 className="font-semibold mb-2 text-yellow-400">Buy Gold vs Sell Gold Ratio</h3>
       <div className="h-[210px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>

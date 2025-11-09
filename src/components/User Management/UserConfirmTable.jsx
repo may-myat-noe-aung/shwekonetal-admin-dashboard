@@ -8,7 +8,6 @@ export default function UserConfirmTable() {
   const [actionType, setActionType] = useState("");
   const [passcode, setPasscode] = useState("");
 
-  // ✅ Fetch real users from API
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -22,7 +21,9 @@ export default function UserConfirmTable() {
       }
     };
 
-    fetchUsers();
+    fetchUsers(); // initial fetch
+    const interval = setInterval(fetchUsers, 1000); // every 60s
+    return () => clearInterval(interval);
   }, []);
 
   // ✅ Only show pending users
@@ -31,95 +32,87 @@ export default function UserConfirmTable() {
     [users]
   );
 
-  const handleAction = (type, user) => {
-    setActionType(type);
-    setViewUser(user);
-    setPasscode("");
-    setShowPasscodeModal(true);
+  const handleAction = async (type, user) => {
+    try {
+      if (type === "approve") {
+        const res = await fetch(
+          `http://38.60.244.74:3000/users/approve/${user.id}`,
+          { method: "PATCH" }
+        );
+        if (!res.ok) throw new Error("Failed to approve user");
+      } else if (type === "reject") {
+        const res = await fetch(
+          `http://38.60.244.74:3000/users/reject/${user.id}`,
+          { method: "PATCH" }
+        );
+        if (!res.ok) throw new Error("Failed to reject user");
+      }
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === user.id
+            ? { ...u, status: type === "approve" ? "approved" : "rejected" }
+            : u
+        )
+      );
+
+      alert(
+        `${user.fullname} ${type === "approve" ? "approved ✅" : "rejected ❌"}`
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Action failed ❌");
+    }
   };
 
-  // const confirmAction = async () => {
-  //   if (passcode === "1234") {
-  //     try {
-  //       const updatedStatus =
-  //         actionType === "approve" ? "approved" : "rejected";
-
-  //       // ✅ Update API
-  //       await fetch(`http://38.60.244.74:3000/users/${viewUser.id}`, {
-  //         method: "PUT",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({ ...viewUser, status: updatedStatus }),
-  //       });
-
-  //       // ✅ Update UI
-  //       setUsers((prev) =>
-  //         prev.map((u) =>
-  //           u.id === viewUser.id ? { ...u, status: updatedStatus } : u
-  //         )
-  //       );
-
-  //       alert(
-  //         `${viewUser.fullname} ${
-  //           actionType === "approve" ? "approved ✅" : "rejected ❌"
-  //         }`
-  //       );
-
-  //       setShowPasscodeModal(false);
-  //       setViewUser(null);
-  //     } catch (err) {
-  //       console.error("Update failed:", err);
-  //       alert("Failed to update user ❌");
-  //     }
-  //   } else {
-  //     alert("Incorrect passcode ❌");
-  //   }
-  // };
-
   const confirmAction = async () => {
-  if (passcode !== "1234") {
-    alert("Incorrect passcode ❌");
-    return;
-  }
-
-  try {
-    if (actionType === "approve") {
-      // PATCH request to approve endpoint
-      const res = await fetch(
-        `http://38.60.244.74:3000/users/approve/${viewUser.id}`,
-        { method: "PATCH" }
-      );
-      if (!res.ok) throw new Error("Failed to approve user");
-    } else if (actionType === "reject") {
-      // PATCH request to reject endpoint (if exists)
-      const res = await fetch(
-        `http://38.60.244.74:3000/users/reject/${viewUser.id}`,
-        { method: "PATCH" }
-      );
-      if (!res.ok) throw new Error("Failed to reject user");
+    if (passcode !== "1234") {
+      alert("Incorrect passcode ❌");
+      return;
     }
 
-    // Update UI
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === viewUser.id
-          ? { ...u, status: actionType === "approve" ? "approved" : "rejected" }
-          : u
-      )
-    );
+    try {
+      if (actionType === "approve") {
+        // PATCH request to approve endpoint
+        const res = await fetch(
+          `http://38.60.244.74:3000/users/approve/${viewUser.id}`,
+          { method: "PATCH" }
+        );
+        if (!res.ok) throw new Error("Failed to approve user");
+      } else if (actionType === "reject") {
+        // PATCH request to reject endpoint (if exists)
+        const res = await fetch(
+          `http://38.60.244.74:3000/users/reject/${viewUser.id}`,
+          { method: "PATCH" }
+        );
+        if (!res.ok) throw new Error("Failed to reject user");
+      }
 
-    alert(
-      `${viewUser.fullname} ${
-        actionType === "approve" ? "approved ✅" : "rejected ❌"
-      }`
-    );
+      // Update UI
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === viewUser.id
+            ? {
+                ...u,
+                status: actionType === "approve" ? "approved" : "rejected",
+              }
+            : u
+        )
+      );
 
-    setShowPasscodeModal(false);
-    setViewUser(null);
-  } catch (err) {
-    console.error(err);
-    alert("Action failed ❌");
-  }
-};
+      alert(
+        `${viewUser.fullname} ${
+          actionType === "approve" ? "approved ✅" : "rejected ❌"
+        }`
+      );
+
+      setShowPasscodeModal(false);
+      setViewUser(null);
+    } catch (err) {
+      console.error(err);
+      alert("Action failed ❌");
+    }
+  };
 
   return (
     <div className="bg-neutral-900 p-6 rounded-2xl shadow-lg w-full">
@@ -342,45 +335,13 @@ export default function UserConfirmTable() {
                 onClick={() => handleAction("reject", viewUser)}
                 className="flex items-center gap-1 px-4 py-2 bg-rose-600 hover:bg-rose-700 rounded-lg text-white text-sm font-medium"
               >
-              Reject  <X size={14} /> 
+                Reject <X size={14} />
               </button>
               <button
                 onClick={() => handleAction("approve", viewUser)}
                 className="flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white text-sm font-medium"
               >
                 Approve <Check size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Passcode Modal */}
-      {showPasscodeModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
-          <div className="bg-neutral-900 p-6 rounded-xl w-80 text-center shadow-lg">
-            <h3 className="text-lg font-semibold mb-3 text-white">
-              Enter Passcode
-            </h3>
-            <input
-              type="password"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              placeholder="Enter passcode..."
-              className="w-full p-2 rounded bg-neutral-800 text-white text-center mb-4 focus:outline-none"
-            />
-            <div className="flex justify-center gap-3">
-              <button
-                onClick={confirmAction}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded text-white text-sm"
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => setShowPasscodeModal(false)}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-white text-sm"
-              >
-                Cancel
               </button>
             </div>
           </div>

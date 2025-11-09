@@ -1,0 +1,351 @@
+import React, { useEffect, useState, useMemo } from "react";
+import { Search, Download, ChevronUp, ChevronDown, Info } from "lucide-react";
+
+const API_BASE = "http://38.60.244.74:3000";
+
+export default function DeliveryTable() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: "created_at", direction: "desc" });
+  const [page, setPage] = useState(1);
+  const [selectedTxn, setSelectedTxn] = useState(null);
+  const [previewImg, setPreviewImg] = useState(null);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [goldTotal, setGoldTotal] = useState("");
+
+  const itemsPerPage = 6;
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/deliTable`);
+        const result = await res.json();
+        if (result.success) {
+          const formatted = result.data.map((item) => ({
+            ...item,
+            date: new Date(item.created_at),
+          }));
+          setData(formatted);
+          setGoldTotal(result.goldTotal);
+        }
+      } catch (err) {
+        console.error("Error fetching delivery table:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const requestSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
+    setSortConfig({ key, direction });
+  };
+
+  const sortedData = useMemo(() => {
+    const sorted = [...data];
+    sorted.sort((a, b) => {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      if (typeof aVal === "string") return sortConfig.direction === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      if (aVal instanceof Date) return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+      return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+    });
+    return sorted;
+  }, [data, sortConfig]);
+
+  const filteredData = sortedData.filter((item) => {
+    const term = searchTerm.toLowerCase();
+    const matchesSearch =
+      item.userid?.toLowerCase().includes(term) ||
+      item.method?.toLowerCase().includes(term) ||
+      item.type?.toLowerCase().includes(term) ||
+      item.gold?.toString().includes(term) ||
+      item.status?.toLowerCase().includes(term);
+
+    const itemTime = item.date.getTime();
+    const fromTime = fromDate ? new Date(fromDate).getTime() : null;
+    const toTime = toDate ? new Date(toDate).getTime() : null;
+
+    const matchesDate = (!fromTime || itemTime >= fromTime) && (!toTime || itemTime <= toTime);
+
+    return matchesSearch && matchesDate;
+  });
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+  const exportCSV = () => {
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      ["UserID,Type,Gold,Price,Method,Status,Seller,Manager,Date"]
+        .concat(
+          filteredData.map((d) =>
+            `${d.userid},${d.type},${d.gold},${d.type === "delivery" ? "-" : d.price?.toLocaleString()},${d.method},${d.status},${d.seller || "-"},${d.manager || "-"},${d.date.toLocaleDateString()}`
+          )
+        )
+        .join("\n");
+    const a = document.createElement("a");
+    a.href = encodeURI(csvContent);
+    a.download = "deliveryTable.csv";
+    a.click();
+  };
+
+  return (
+    <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 overflow-x-auto">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 gap-2">
+        <h3 className="text-xl font-semibold text-orange-400">Delivery Transactions</h3>
+        <div className="flex flex-row md:flex-row gap-2">
+          <div className="flex flex-col md:flex-row gap-2">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-neutral-400" />
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="All Search..."
+                className="w-56 rounded-2xl bg-neutral-900 border border-neutral-700 pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              />
+            </div>
+            <button
+              onClick={exportCSV}
+              className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
+            >
+              <Download size={14} /> Export
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm text-yellow-500">Gold Total - {goldTotal}</h3>
+        <div className="flex gap-4">
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="w-36 rounded-2xl bg-yellow-600 text-neutral-900 pl-3 pr-4 py-2 text-sm focus:outline-none focus:ring-2 hover:bg-yellow-500 focus:ring-yellow-500 appearance-none"
+          />
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="w-36 rounded-2xl bg-yellow-600 text-neutral-900 pl-3 pr-4 py-2 text-sm focus:outline-none focus:ring-2 hover:bg-yellow-500 focus:ring-yellow-500 appearance-none"
+          />
+        </div>
+      </div>
+
+      <table className="min-w-full text-sm">
+        <thead>
+          <tr className="border-b border-neutral-800 text-neutral-500">
+            {[
+              { label: "User ID", key: "userid" },
+              { label: "Type", key: "type" },
+              { label: "Gold", key: "gold" },
+              { label: "Method", key: "method" },
+              { label: "Status", key: "status" },
+              { label: "Seller", key: "seller" },
+              { label: "Manager", key: "manager" },
+              { label: "Date", key: "date" },
+              { label: "Details", key: "details" },
+            ].map((col) => (
+              <th
+                key={col.key}
+                className="py-2 px-3 cursor-pointer select-none text-center"
+                onClick={() => col.key !== "details" && requestSort(col.key)}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  {col.label}
+                  {col.key !== "details" &&
+                    (sortConfig.key === col.key ? (
+                      sortConfig.direction === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                    ) : (
+                      <ChevronUp size={14} className="opacity-30 rotate-180" />
+                    ))}
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <tr>
+              <td colSpan="10" className="text-center py-10 text-yellow-500">Loading...</td>
+            </tr>
+          ) : paginatedData.length === 0 ? (
+            <tr>
+              <td colSpan="10" className="text-center py-10 text-neutral-500">No transactions found.</td>
+            </tr>
+          ) : (
+            paginatedData.map((s) => (
+              <tr key={s.id} className="border-b border-neutral-800 hover:bg-neutral-800/50">
+                <td className="py-2 px-3 text-center">{s.userid}</td>
+                <td className="py-2 px-3 text-center text-orange-400">{s.type}</td>
+                <td className="py-2 px-3 text-center">{s.gold}</td>
+                <td className="py-2 px-3 text-center">{s.method}</td>
+                <td className={`py-2 px-3 text-center font-semibold ${s.status === "approved" ? "text-green-400" : s.status === "pending" ? "text-yellow-400" : "text-red-400"}`}>{s.status}</td>
+                <td className="py-2 px-3 text-center">{s.seller || "-"}</td>
+                <td className="py-2 px-3 text-center">{s.manager || "-"}</td>
+                <td className="py-2 px-3 text-center">{s.date.toLocaleDateString()}</td>
+                <td className="py-2 px-3 text-center">
+                  <button
+                    onClick={() => setSelectedTxn(s)}
+                    className="flex items-center justify-center gap-1 px-3 py-1.5 text-sm font-medium rounded-full bg-yellow-600 text-white hover:bg-yellow-500 transition-all duration-200"
+                  >
+                    <Info size={14} /> Details
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+
+      <div className="flex justify-between px-4 pt-4 text-sm text-neutral-400">
+        <p>Page {totalPages === 0 ? 0 : page} of {totalPages}</p>
+        <div className="flex gap-2">
+          <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className={`px-3 py-1 rounded-md border border-neutral-700 ${page === 1 ? "text-neutral-500 cursor-not-allowed" : "text-yellow-400 hover:bg-neutral-900"}`}>Prev</button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+            <button key={n} onClick={() => setPage(n)} className={`px-3 py-1 rounded-md border border-neutral-700 ${page === n ? "bg-yellow-500 text-black font-semibold" : "text-yellow-400 hover:bg-neutral-900"}`}>{n}</button>
+          ))}
+          <button disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={`px-3 py-1 rounded-md border border-neutral-700 ${page === totalPages ? "text-neutral-500 cursor-not-allowed" : "text-yellow-400 hover:bg-neutral-900"}`}>Next</button>
+        </div>
+      </div>
+
+   {selectedTxn && selectedTxn.type === "delivery" && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-full max-w-lg relative">
+      <button
+        onClick={() => setSelectedTxn(null)}
+        className="absolute top-3 right-3 text-neutral-400 hover:text-neutral-200"
+      >
+        ✕
+      </button>
+
+      {/* --- Transaction ID --- */}
+      <h2 className="text-lg font-semibold mb-4 text-yellow-400">{selectedTxn.id}</h2>
+
+      {/* --- Customer & Delivery Cards --- */}
+      <div className="bg-purple-900/20 p-4 rounded-xl mb-4">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-5">
+          {/* Customer Info */}
+          <div className="col-span-2 rounded-xl p-3">
+            <p className="font-medium text-purple-300 mb-2">🧍 Customer Info</p>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <p><span className="text-neutral-400">Full Name -</span> {selectedTxn.fullname || "-"}</p>
+              <p><span className="text-neutral-400">Phone -</span> {selectedTxn.payment_phone || "-"}</p>
+            </div>
+          </div>
+
+          {/* Delivery Info */}
+          <div className="col-span-2 bg-purple-950/30 border border-purple-800/40 rounded-xl p-3">
+            <p className="font-medium text-purple-300 mb-2">📦 Delivery Info</p>
+            <div className="grid grid-cols-2 gap-2 text-[16px]">
+              <p className="col-span-2"><span className="text-neutral-400">Delivery Address -</span> {selectedTxn.address || "-"}</p>
+              <p><span className="text-neutral-400">Delivery Type -</span> {selectedTxn.deli_type || "-"}</p>
+              <p><span className="text-neutral-400">Gold -</span> {selectedTxn.gold || "-"}</p>
+              <p>
+                <span className="text-neutral-400">Status -</span>{" "}
+                <span
+                  className={`font-semibold px-2 py-1 rounded-full ${
+                    selectedTxn.status === "approved"
+                      ? "text-emerald-400 bg-emerald-900/20"
+                      : selectedTxn.status === "pending"
+                      ? "text-yellow-400 bg-yellow-900/20"
+                      : "text-rose-400 bg-rose-900/20"
+                  }`}
+                >
+                  {selectedTxn.status || "-"}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- Fees & Actions (only pending) --- */}
+      {selectedTxn.status === "pending" && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setShowPasscode({ type: "approve" });
+          }}
+        >
+          <div className="flex gap-4 mb-4">
+            <div>
+              <label className="text-sm text-neutral-400">Delivery Fee</label>
+              <input
+                type="number"
+                value={deliveryFee}
+                onChange={(e) => setDeliveryFee(Number(e.target.value))}
+                required
+                className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-neutral-400">Service Fee</label>
+              <input
+                type="number"
+                value={serviceFee}
+                onChange={(e) => setServiceFee(Number(e.target.value))}
+                required
+                className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <button
+              type="submit"
+              className={`px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-sm ${
+                actionTaken !== "none" ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={actionTaken !== "none"}
+            >
+              Transfer
+            </button>
+
+            <button
+              onClick={() => setShowPasscode({ type: "reject" })}
+              className={`px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-sm ${
+                actionTaken !== "none" ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              Reject
+            </button>
+
+            <button
+              onClick={() => setShowChat(true)}
+              className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-sm"
+            >
+              💬 Message
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* --- Photos --- */}
+      {selectedTxn.photos?.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto mt-3">
+          {selectedTxn.photos.map((file, idx) => (
+            <img
+              key={idx}
+              src={`${API_BASE}/uploads/${file}`}
+              alt="Proof"
+              onClick={() => setPreviewImg(`${API_BASE}/uploads/${file}`)}
+              className="w-28 h-40 object-cover border border-neutral-700 rounded-lg cursor-pointer hover:scale-105 transition"
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
+
+
+    </div>
+  );
+}
