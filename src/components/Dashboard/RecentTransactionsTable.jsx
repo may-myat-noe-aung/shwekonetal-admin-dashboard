@@ -116,7 +116,7 @@ export default function RecentTransactions() {
     <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 overflow-x-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xl font-semibold">Approved Transactions</h3>
+        <h3 className="text-xl font-semibold"> Approved Transactions (Today) </h3>
         <div className="flex gap-2">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-neutral-400" />
@@ -176,7 +176,7 @@ export default function RecentTransactions() {
 
      <tbody>
   {paginatedSales.length === 0 ? (
-    <tr className="h-[480px]">
+    <tr className="h-[200px]">
       <td colSpan={9} className="text-center py-10 text-neutral-500">
         No approved transactions found.
       </td>

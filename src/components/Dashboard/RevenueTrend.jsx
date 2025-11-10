@@ -20,7 +20,7 @@ export default function RevenueTrend() {
   }, []);
 
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
+    <div className="">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold">Revenue Trend</h3>
         <TrendingUp className="h-4 w-4 text-neutral-400" />

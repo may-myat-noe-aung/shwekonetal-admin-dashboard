@@ -15,58 +15,6 @@ const API_BASE = "http://38.60.244.74:3000"; // your backend URL
 export default function BuyingPricesChart() {
   const [chartData, setChartData] = useState([]);
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const res = await axios.get(`${API_BASE}/buying-prices`);
-  //       const data = res.data; // nested object by date
-
-  //       // Get today and yesterday date strings
-  //       const today = new Date();
-  //       const todayStr = today.toISOString().split("T")[0];
-
-  //       const yesterday = new Date();
-  //       yesterday.setDate(today.getDate() - 1);
-  //       const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-  //       // Helper to convert nested object to array
-  //       const convertToArray = (dateStr) => {
-  //         if (!data[dateStr]) return [];
-  //         return Object.entries(data[dateStr])
-  //           .filter(([_, price]) => price !== null)
-  //           .map(([time, price]) => ({ time, price }));
-  //       };
-
-  //       const todayData = convertToArray(todayStr);
-  //       const yesterdayData = convertToArray(yesterdayStr);
-
-  //       // Merge by unique time
-  //       const allTimes = Array.from(
-  //         new Set([
-  //           ...todayData.map((d) => d.time),
-  //           ...yesterdayData.map((d) => d.time),
-  //         ])
-  //       ).sort((a, b) => {
-  //         const [h1] = a.split(":");
-  //         const [h2] = b.split(":");
-  //         return parseInt(h1) - parseInt(h2);
-  //       });
-
-  //       const merged = allTimes.map((time) => ({
-  //         time,
-  //         buy: todayData.find((d) => d.time === time)?.price || null,
-  //         sell: yesterdayData.find((d) => d.time === time)?.price || null,
-  //       }));
-
-  //       setChartData(merged);
-  //     } catch (err) {
-  //       console.error("Error fetching buying prices:", err);
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, []);
-
   useEffect(() => {
   const fetchData = async () => {
     try {
@@ -139,7 +87,7 @@ export default function BuyingPricesChart() {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
             <XAxis dataKey="time" stroke="#a3a3a3" />
-            <YAxis stroke="#a3a3a3" width={80} />
+            <YAxis stroke="#a3a3a3" width={100} />
             <Tooltip
               contentStyle={{
                 background: "#0a0a0a",

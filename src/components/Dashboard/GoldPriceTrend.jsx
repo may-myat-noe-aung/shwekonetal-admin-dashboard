@@ -63,7 +63,7 @@ export default function GoldPriceTrend() {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
             <XAxis dataKey="time" stroke="#a3a3a3" interval="preserveStartEnd" />
-            <YAxis stroke="#a3a3a3" />
+            <YAxis stroke="#a3a3a3" width={100}/>
             <Tooltip
               contentStyle={{
                 background: "#0a0a0a",
@@ -75,7 +75,7 @@ export default function GoldPriceTrend() {
               dataKey="price"
               stroke="#f59e0b"
               fill="url(#gold)"
-              connectNulls={false} // <--- null values များမှာ line မပေါ်စေပါ
+              connectNulls={false}  
             />
           </AreaChart>
         </ResponsiveContainer>

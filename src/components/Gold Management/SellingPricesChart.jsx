@@ -89,7 +89,7 @@ useEffect(() => {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
             <XAxis dataKey="time" stroke="#a3a3a3" />
-            <YAxis stroke="#a3a3a3" width={80} />
+            <YAxis stroke="#a3a3a3" width={100} />
             <Tooltip
               contentStyle={{
                 background: "#0a0a0a",

@@ -359,13 +359,12 @@ export default function UserTableWithSummary() {
         </div>
 
         {/* Details Modal */}
-    <UserDetailModal
-  viewUser={viewUser}
-  onClose={() => setViewUser(null)}
-  handleDelete={handleDelete}   // pass delete function
-  sendMessage={sendMessage}     // pass message function
-/>
-
+        <UserDetailModal
+          viewUser={viewUser}
+          onClose={() => setViewUser(null)}
+          handleDelete={handleDelete} // pass delete function
+          sendMessage={sendMessage} // pass message function
+        />
 
         {/* Confirm Modal */}
         <UserConfirmTable
