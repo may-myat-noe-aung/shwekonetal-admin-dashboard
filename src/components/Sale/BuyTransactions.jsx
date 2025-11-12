@@ -23,33 +23,35 @@ const BuyTransactions = ({ sales, updateStatus }) => {
   const [toDate, setToDate] = useState("");
 
   // --- Filter sales by type "buy" with search across all fields ---
+  // --- Filter sales by type "buy" with search across all fields + date filter fixed ---
   const filteredSales = useMemo(() => {
     if (!sales || sales.length === 0) return [];
     const term = searchTerm.toLowerCase();
 
-    return (
-      sales
-        .filter((s) => s.type === "buy")
-        .filter(
-          (s) =>
-            s.id?.toString().toLowerCase().includes(term) ||
-            s.userid?.toString().toLowerCase().includes(term) ||
-            s.fullname?.toString().toLowerCase().includes(term) ||
-            s.status?.toString().toLowerCase().includes(term) ||
-            s.method?.toString().toLowerCase().includes(term) ||
-            s.price?.toString().toLowerCase().includes(term)
-        )
-        // --- Add this date filter ---
-        .filter((s) => {
-          const itemTime = s.date.getTime();
-          const fromTime = fromDate ? new Date(fromDate).getTime() : null;
-          const toTime = toDate ? new Date(toDate).getTime() + 86399999 : null; // include full day
-          return (
-            (!fromTime || itemTime >= fromTime) &&
-            (!toTime || itemTime <= toTime)
-          );
-        })
-    );
+    return sales
+      .filter((s) => s.type === "buy")
+      .filter(
+        (s) =>
+          s.id?.toString().toLowerCase().includes(term) ||
+          s.userid?.toString().toLowerCase().includes(term) ||
+          s.fullname?.toString().toLowerCase().includes(term) ||
+          s.status?.toString().toLowerCase().includes(term) ||
+          s.method?.toString().toLowerCase().includes(term) ||
+          s.price?.toString().toLowerCase().includes(term)
+      )
+      .filter((s) => {
+        // ✅ convert string to Date object
+        const itemDate = new Date(s.date || s.created_at);
+        itemDate.setHours(0, 0, 0, 0); // start of the day
+
+        const from = fromDate ? new Date(fromDate) : null;
+        const to = toDate ? new Date(toDate) : null;
+
+        if (from) from.setHours(0, 0, 0, 0);
+        if (to) to.setHours(23, 59, 59, 999);
+
+        return (!from || itemDate >= from) && (!to || itemDate <= to);
+      });
   }, [sales, searchTerm, fromDate, toDate]);
 
   // --- Sorted Sales ---
@@ -230,8 +232,13 @@ const BuyTransactions = ({ sales, updateStatus }) => {
                     {s.price.toLocaleString()} ကျပ်
                   </td>
                   <td className="py-2 px-3 whitespace-nowrap">
-                    {s.date.toLocaleDateString()}
+                    {new Intl.DateTimeFormat("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    }).format(new Date(s.date || s.created_at))}
                   </td>
+
                   <td className="py-2 px-3 whitespace-nowrap">
                     {s.date.toLocaleTimeString()}
                   </td>

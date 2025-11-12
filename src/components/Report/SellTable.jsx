@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { ChevronUp, ChevronDown, Info, Search, Download } from "lucide-react";
 
+
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+
 const API_BASE = "http://38.60.244.74:3000";
 
 export default function SellTable() {
@@ -79,12 +83,27 @@ export default function SellTable() {
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
 
-    // Date filter
-    const itemTime = s.date.getTime();
-    const fromTime = fromDate ? new Date(fromDate).getTime() : null;
-    const toTime = toDate ? new Date(toDate).getTime() : null;
-    const matchesDate =
-      (!fromTime || itemTime >= fromTime) && (!toTime || itemTime <= toTime);
+    let matchesDate = false;
+    // date range filter
+    const createdAt = new Date(s.created_at);
+    const fromTime = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
+    const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
+    if (fromTime && toTime) {
+      // ✅ Range filter
+      matchesDate =
+        createdAt.getTime() >= fromTime && createdAt.getTime() <= toTime;
+    } else if (fromTime || toTime) {
+      // ✅ Only one date → one-day filter
+      const singleDate = new Date(fromTime || toTime);
+      const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
+      const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
+
+      matchesDate =
+        createdAt.getTime() >= startOfDay && createdAt.getTime() <= endOfDay;
+    } else {
+      // ✅ No date filters → show all
+      matchesDate = true;
+    }
 
     return matchesSearch && matchesDate;
   });
@@ -95,7 +114,83 @@ export default function SellTable() {
     page * itemsPerPage
   );
 
-
+  // Export EXCEL
+    const handleExport = async () => {
+      try {
+        const res = await fetch("http://38.60.244.74:3000/sales");
+        const data = await res.json();
+        
+        if (!data.success && !Array.isArray(data.data)) {
+          alert("No data found to export.");
+          return;
+        }
+  
+        // frontend filter logic (search + date)
+        const filtered = data.data
+          .filter((s) => ["sell"].includes(s.type?.toLowerCase()))
+          .filter((s) => {
+            // search (fullname, id_number, email)
+            const text = `${s.fullname} ${s.userid} ${s.price} ${s.status} ${s.method}`.toLowerCase();
+            const matchesSearch = searchTerm
+            ? text.includes(searchTerm.toLowerCase())
+            : true;
+  
+            // date range filter
+            const createdAt = new Date(s.created_at);
+            const fromTime = fromDate ? new Date(fromDate).getTime() : null;
+            const toTime = toDate ? new Date(toDate).getTime() + 86399999 : null;
+  
+            const matchesDate =
+              (!fromTime || createdAt.getTime() >= fromTime) &&
+              (!toTime || createdAt.getTime() <= toTime);
+  
+            return matchesSearch && matchesDate;
+          });
+  
+        if (filtered.length === 0) {
+          alert("No matching data to export.");
+          return;
+        }
+  
+        // convert to excel
+        const exportData = filtered.map((item, count) => ({
+          ID: String(count + 1),
+          UserID: item.userid,
+          Name: item.fullname,
+          Seller: item.seller,
+          Manager: item.manager,
+          Type: item.type,
+          Gold: item.gold,
+          Price: `${item.price.toLocaleString()} ကျပ်`,
+          Payment_Phone: item.payment_phone,
+          Payment_Name: item.payment_name,
+          Method: item.method,
+          Status: item.status,
+          Date: new Date(item.created_at).toLocaleDateString(),
+          Time: new Date(item.created_at).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          }),
+        }));
+  
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Sell Sales Report");
+  
+        const excelBuffer = XLSX.write(workbook, {
+          bookType: "xlsx",
+          type: "array",
+        });
+        const blob = new Blob([excelBuffer], {
+          type: "application/octet-stream",
+        });
+  
+        saveAs(blob, "Sell Sales Report.xlsx");
+      } catch (error) {
+        console.error("Export error:", error);
+      }
+    };
 
   return (
     <>
@@ -119,6 +214,7 @@ export default function SellTable() {
             </div>
 
             <button
+              onClick={handleExport}
               className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
             >
               <Download size={14} /> Export
@@ -161,14 +257,14 @@ export default function SellTable() {
             <tr className="border-b border-neutral-800 text-neutral-500">
               {[
                 { label: "User ID", key: "userid" },
-                { label: "Type", key: "type" },
+                 { label: "Seller", key: "seller" },      
+  { label: "Manager", key: "manager" },  
                 { label: "ကျပ် ပဲ ရွေး", key: "gold" },
                 { label: "Price", key: "price" },
                 { label: "Date", key: "date" },
                 { label: "Method", key: "method" },
                 { label: "Payment Name", key: "payment_name" },
                 { label: "Payment Phone", key: "payment_phone" },
-                { label: "Status", key: "status" },
                 { label: "Details", key: "details" },
               ].map((col) => (
                 <th
@@ -211,22 +307,17 @@ export default function SellTable() {
                   className="border-b border-neutral-800 hover:bg-neutral-800/50 text-center"
                 >
                   <td className="py-2 px-3">{s.userid}</td>
-                  <td className="py-2 px-3 text-red-500 font-semibold capitalize">
-                    {s.type}
-                  </td>
+                    <td className="py-2 px-3 text-center">{s.seller || "-"}</td>      {/* ✅ new */}
+  <td className="py-2 px-3 text-center">{s.manager || "-"}</td> 
+                  
+          
                   <td className="py-2 px-3">{s.gold}</td>
                   <td className="py-2 px-3">{s.price.toLocaleString()} Ks</td>
                   <td className="py-2 px-3">{s.date.toLocaleDateString()}</td>
                   <td className="py-2 px-3">{s.method}</td>
                   <td className="py-2 px-3">{s.payment_name || "-"}</td>
                   <td className="py-2 px-3">{s.payment_phone || "-"}</td>
-                  <td
-                    className={`py-2 px-3 font-semibold text-emerald-400 ${
-                      s.status === "approved"
-                    }`}
-                  >
-                    {s.status}
-                  </td>
+            
                   <td className="py-2 px-3">
                     <button
                       onClick={() => setSelectedTxn(s)}

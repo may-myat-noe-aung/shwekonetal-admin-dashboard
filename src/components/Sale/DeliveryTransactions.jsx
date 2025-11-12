@@ -5,6 +5,9 @@ import { Info, Search, Download, ChevronUp, ChevronDown } from "lucide-react";
 import TransactionPopup from "./TransactionPopup.jsx";
 import { useNavigate } from "react-router-dom";
 
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+
 const DeliveryTransactions = ({ sales, updateStatus }) => {
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [previewImg, setPreviewImg] = useState(null);
@@ -44,28 +47,37 @@ const filteredSales = useMemo(() => {
     .filter(s => s.type === "delivery")
     .filter(
       s =>
-        s.id?.toString().toLowerCase().includes(term) ||
-        s.userid?.toString().toLowerCase().includes(term) ||
-        s.fullname?.toString().toLowerCase().includes(term) ||
-        s.status?.toString().toLowerCase().includes(term) ||
-        s.method?.toString().toLowerCase().includes(term) ||
-        s.deli_fees?.toString().toLowerCase().includes(term) ||
-        s.service_fees?.toString().toLowerCase().includes(term)
+        (s.id?.toString().toLowerCase().includes(term)) ||
+        (s.userid?.toString().toLowerCase().includes(term)) ||
+        (s.fullname?.toString().toLowerCase().includes(term)) ||
+        (s.status?.toString().toLowerCase().includes(term)) ||
+        (s.method?.toString().toLowerCase().includes(term)) ||
+        (s.deli_fees?.toString().toLowerCase().includes(term)) ||
+        (s.service_fees?.toString().toLowerCase().includes(term))
     )
+    // ✅ date filter
     .filter((s) => {
-      const itemDate = new Date(s.date || s.created_at);
-      itemDate.setHours(0, 0, 0, 0);
+      const itemTime = s.date.getTime();
+      const fromTime = fromDate ? new Date(fromDate).getTime() : null;
+      const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null; // include full day
 
-      const from = fromDate ? new Date(fromDate) : null;
-      const to = toDate ? new Date(toDate) : null;
-      if (from) from.setHours(0, 0, 0, 0);
-      if (to) to.setHours(23, 59, 59, 999);
+      // ✅ Case 1: fromDate & toDate both exist → range
+      if (fromTime && toTime) {
+        return itemTime >= fromTime && itemTime <= toTime;
+      }
 
-      return (!from || itemDate >= from) && (!to || itemDate <= to);
-    });
+      // ✅ Case 2: only one date → single day filter
+      if (fromTime || toTime) {
+        const singleDate = new Date(fromTime || toTime);
+        const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
+        const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
+        return itemTime >= startOfDay && itemTime <= endOfDay;
+      }
+
+      // ✅ Case 3: no filter → show all
+      return true;
+    })
 }, [salesData, searchTerm, fromDate, toDate]);
-
-
 
   const sortedSales = useMemo(() => {
     const sortable = [...filteredSales];
@@ -101,35 +113,98 @@ const filteredSales = useMemo(() => {
     setSortConfig({ key, direction });
   };
 
-  // CSV Export with UI toast
-  const exportCSV = () => {
-    if (!filteredSales.length) {
-      setCsvMessage("⚠️ No data to export!");
-      setTimeout(() => setCsvMessage(""), 3000);
-      return;
+  // Export EXCEL
+  const handleExport = async () => {
+    try {
+      const res = await fetch("http://38.60.244.74:3000/sales");
+      const data = await res.json();
+      
+      if (!data.success && !Array.isArray(data.data)) {
+        alert("No data found to export.");
+        return;
+      }
+
+      // frontend filter logic (search + date)
+      const filtered = data.data
+        .filter((s) => ["delivery"].includes(s.type?.toLowerCase()))
+        .filter((s) => {
+          // search (fullname, id_number, email)
+          const text = `${s.fullname} ${s.userid} ${s.deli_fees} ${s.service_fees} ${s.status}`.toLowerCase();
+          const matchesSearch = searchTerm
+          ? text.includes(searchTerm.toLowerCase())
+          : true;
+
+          // date range filter
+          const createdAt = new Date(s.created_at);
+          const fromTime = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
+          const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
+
+          let matchesDate = false;
+
+          if (fromTime && toTime) {
+            // ✅ Range filter
+            matchesDate =
+              createdAt.getTime() >= fromTime && createdAt.getTime() <= toTime;
+          } else if (fromTime || toTime) {
+            // ✅ Only one date → one-day filter
+            const singleDate = new Date(fromTime || toTime);
+            const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
+            const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
+
+            matchesDate =
+              createdAt.getTime() >= startOfDay && createdAt.getTime() <= endOfDay;
+          } else {
+            // ✅ No date filters → show all
+            matchesDate = true;
+          }
+
+          return matchesSearch && matchesDate;
+        });
+
+      if (filtered.length === 0) {
+        alert("No matching data to export.");
+        return;
+      }
+
+      // convert to excel
+      const exportData = filtered.map((item, count) => ({
+        ID: String(count + 1),
+        UserID: item.userid,
+        Name: item.fullname,
+        Seller: item.seller,
+        Manager: item.manager,
+        Type: item.type,
+        Gold: item.gold,
+        Delivery_Fees: `${item.deli_fees ? item.deli_fees.toLocaleString() : '-'} ကျပ်`,
+        Server_Fees: `${item.services_fees ? item.deli_fees.toLocaleString() : '-'} ကျပ်`,
+        Phone: item.payment_phone,
+        Address: item.address,
+        Delivery_Type: item.deli_type,
+        Status: item.status,
+        Date: new Date(item.created_at).toLocaleDateString(),
+        Time: new Date(item.created_at).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Delivery Sales");
+
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+      });
+      const blob = new Blob([excelBuffer], {
+        type: "application/octet-stream",
+      });
+
+      saveAs(blob, "Delivery Sales.xlsx");
+    } catch (error) {
+      console.error("Export error:", error);
     }
-
-    const headers = ["ID", "User", "Type", "Gold", "Delivery Fee", "Service Fee", "Status", "Date"];
-    const rows = filteredSales.map(s => [
-      s.id,
-      s.userid,
-      s.type,
-      s.gold,
-      s.deli_fees ?? "",
-      s.service_fees ?? "",
-      s.status,
-      s.date.toLocaleString(),
-    ]);
-
-    const csv = [headers, ...rows].map(r => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "delivery_transactions.csv";
-    link.click();
-
-    setCsvMessage("✅ CSV exported successfully!");
-    setTimeout(() => setCsvMessage(""), 3000);
   };
 
   // Pagination sliding window
@@ -166,10 +241,10 @@ const filteredSales = useMemo(() => {
                     />
                   </div>
                   <button
-                    // onClick={exportCSV}
+                    onClick={handleExport}
                     className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
                   >
-                    <Download size={14} /> Export CSV
+                    <Download size={14} /> Export
                   </button>
                 </div>
     
@@ -204,6 +279,7 @@ const filteredSales = useMemo(() => {
                 { label: "Service Fee", key: "serviceFee" },
                 { label: "Delivery Date", key: "date" },
                 { label: "Time", key: "time" },
+                { label: "Payment", key: "payment" },
                 { label: "Status", key: "status" },
                 { label: "Details", key: "details" },
               ].map((col) => (
@@ -250,11 +326,9 @@ const filteredSales = useMemo(() => {
                   <td className="py-2 px-3">{s.gold}</td>
                   <td className="py-2 px-3">{s.deli_fees ?? "-"} ကျပ်</td>
                   <td className="py-2 px-3">{s.service_fees ?? "-"}ကျပ်</td>
-           <td className="py-2 px-3">
-  {new Date(s.date || s.created_at).toLocaleDateString("en-GB")}
-</td>
-
+                  <td className="py-2 px-3">{s.date.toLocaleDateString()}</td>
                   <td className="py-2 px-3">{s.date.toLocaleTimeString()}</td>
+                  <td className="py-2 px-3 capitalize">{s.method}</td>
                   <td
                     className={`py-2 px-3 capitalize font-semibold ${
                       s.status === "approved"

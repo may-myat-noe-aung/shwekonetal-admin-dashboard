@@ -231,60 +231,60 @@ export default function UserConfirmTable() {
             )}
           </tbody>
         </table>
-          {/* Pagination Sliding Window */}
-            <div className="flex flex-col md:flex-row justify-between px-4 py-2 text-sm text-neutral-400 gap-2 md:gap-0 mt-4">
-              <p>
-                Page {totalPages === 0 ? 0 : page} / {totalPages}
-              </p>
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  disabled={page === 1}
-                  onClick={() => {
-                    const newPage = Math.max(1, page - 1);
-                    setPage(newPage);
-                    if (newPage < startPage)
-                      setPageWindow(Math.max(1, pageWindow - 1));
-                  }}
-                  className={`px-3 py-1 rounded-md border border-neutral-700 ${
-                    page === 1
-                      ? "text-neutral-500 cursor-not-allowed"
-                      : "text-yellow-400 hover:bg-neutral-900"
-                  }`}
-                >
-                  Prev
-                </button>
+        {/* Pagination Sliding Window */}
+        <div className="flex flex-col md:flex-row justify-between px-4 py-2 text-sm text-neutral-400 gap-2 md:gap-0 mt-4">
+          <p>
+            Page {totalPages === 0 ? 0 : page} / {totalPages}
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              disabled={page === 1}
+              onClick={() => {
+                const newPage = Math.max(1, page - 1);
+                setPage(newPage);
+                if (newPage < startPage)
+                  setPageWindow(Math.max(1, pageWindow - 1));
+              }}
+              className={`px-3 py-1 rounded-md border border-neutral-700 ${
+                page === 1
+                  ? "text-neutral-500 cursor-not-allowed"
+                  : "text-yellow-400 hover:bg-neutral-900"
+              }`}
+            >
+              Prev
+            </button>
 
-                {visiblePages.map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setPage(n)}
-                    className={`px-3 py-1 rounded-md border border-neutral-700 ${
-                      page === n
-                        ? "bg-yellow-500 text-black font-semibold"
-                        : "text-yellow-400 hover:bg-neutral-900"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
+            {visiblePages.map((n) => (
+              <button
+                key={n}
+                onClick={() => setPage(n)}
+                className={`px-3 py-1 rounded-md border border-neutral-700 ${
+                  page === n
+                    ? "bg-yellow-500 text-black font-semibold"
+                    : "text-yellow-400 hover:bg-neutral-900"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
 
-                <button
-                  disabled={page === totalPages}
-                  onClick={() => {
-                    const newPage = Math.min(totalPages, page + 1);
-                    setPage(newPage);
-                    if (newPage > endPage) setPageWindow(pageWindow + 1);
-                  }}
-                  className={`px-3 py-1 rounded-md border border-neutral-700 ${
-                    page === totalPages
-                      ? "text-neutral-500 cursor-not-allowed"
-                      : "text-yellow-400 hover:bg-neutral-900"
-                  }`}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <button
+              disabled={page === totalPages}
+              onClick={() => {
+                const newPage = Math.min(totalPages, page + 1);
+                setPage(newPage);
+                if (newPage > endPage) setPageWindow(pageWindow + 1);
+              }}
+              className={`px-3 py-1 rounded-md border border-neutral-700 ${
+                page === totalPages
+                  ? "text-neutral-500 cursor-not-allowed"
+                  : "text-yellow-400 hover:bg-neutral-900"
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Detail Modal */}
@@ -442,7 +442,6 @@ export default function UserConfirmTable() {
                 />
               </div>
             )}
-          
           </div>
         </div>
       )}

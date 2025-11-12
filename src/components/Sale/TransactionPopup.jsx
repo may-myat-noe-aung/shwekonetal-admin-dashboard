@@ -510,13 +510,18 @@ export default function TransactionPopup({
             </h3>
 
             {/* Password Input */}
-            <input
-              type="password"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              placeholder="••••••"
-              className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
-            />
+      <input
+  type="password"
+  value={passcode}
+  onChange={(e) => setPasscode(e.target.value)}
+  placeholder="••••••"
+  className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
+  autoFocus
+  onKeyDown={(e) => {
+    if (e.key === "Enter") handleConfirm();
+  }}
+/>
+
 
             {/* Action Buttons */}
             <div className="flex justify-between gap-3">

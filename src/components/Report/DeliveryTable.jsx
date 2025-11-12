@@ -73,16 +73,126 @@ export default function DeliveryTable() {
       item.type?.toLowerCase().includes(term) ||
       item.gold?.toString().includes(term) ||
       item.status?.toLowerCase().includes(term);
+      // date range filter
+      const createdAt = new Date(item.created_at);
+      const fromTime = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
+      const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
 
-    const itemTime = item.date.getTime();
-    const fromTime = fromDate ? new Date(fromDate).getTime() : null;
-    const toTime = toDate ? new Date(toDate).getTime() : null;
+      let matchesDate = false;
 
-    const matchesDate =
-      (!fromTime || itemTime >= fromTime) && (!toTime || itemTime <= toTime);
+      if (fromTime && toTime) {
+        // ✅ Range filter
+        matchesDate =
+          createdAt.getTime() >= fromTime && createdAt.getTime() <= toTime;
+      } else if (fromTime || toTime) {
+        // ✅ Only one date → one-day filter
+        const singleDate = new Date(fromTime || toTime);
+        const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
+        const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
+
+        matchesDate =
+          createdAt.getTime() >= startOfDay && createdAt.getTime() <= endOfDay;
+      } else {
+        // ✅ No date filters → show all
+        matchesDate = true;
+      }
 
     return matchesSearch && matchesDate;
   });
+
+  // Export EXCEL
+  const handleExport = async () => {
+      try {
+        const res = await fetch("http://38.60.244.74:3000/sales");
+        const data = await res.json();
+        
+        if (!data.success && !Array.isArray(data.data)) {
+          alert("No data found to export.");
+          return;
+        }
+  
+        // frontend filter logic (search + date)
+        const filtered = data.data
+          .filter((s) => ["delivery"].includes(s.type?.toLowerCase()))
+          .filter((s) => {
+            // search (fullname, id_number, email)
+            const text = `${s.fullname} ${s.userid} ${s.deli_fees} ${s.seller} ${s.manager} ${s.service_fees}`.toLowerCase();
+            const matchesSearch = searchTerm
+            ? text.includes(searchTerm.toLowerCase())
+            : true;
+  
+            // date range filter
+            const createdAt = new Date(s.created_at);
+            const fromTime = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
+            const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
+  
+            let matchesDate = false;
+  
+            if (fromTime && toTime) {
+              // ✅ Range filter
+              matchesDate =
+                createdAt.getTime() >= fromTime && createdAt.getTime() <= toTime;
+            } else if (fromTime || toTime) {
+              // ✅ Only one date → one-day filter
+              const singleDate = new Date(fromTime || toTime);
+              const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
+              const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
+  
+              matchesDate =
+                createdAt.getTime() >= startOfDay && createdAt.getTime() <= endOfDay;
+            } else {
+              // ✅ No date filters → show all
+              matchesDate = true;
+            }
+  
+            return matchesSearch && matchesDate;
+          });
+  
+        if (filtered.length === 0) {
+          alert("No matching data to export.");
+          return;
+        }
+  
+        // convert to excel
+        const exportData = filtered.map((item, count) => ({
+          ID: String(count + 1),
+          UserID: item.userid,
+          Name: item.fullname,
+          Seller: item.seller,
+          Manager: item.manager,
+          Type: item.type,
+          Gold: item.gold,
+          Delivery_Fees: `${item.deli_fees ? item.deli_fees.toLocaleString() : '-'} ကျပ်`,
+          Server_Fees: `${item.services_fees ? item.deli_fees.toLocaleString() : '-'} ကျပ်`,
+          Phone: item.payment_phone,
+          Address: item.address,
+          Delivery_Type: item.deli_type,
+          Status: item.status,
+          Date: new Date(item.created_at).toLocaleDateString(),
+          Time: new Date(item.created_at).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          }),
+        }));
+  
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Delivery Sales");
+  
+        const excelBuffer = XLSX.write(workbook, {
+          bookType: "xlsx",
+          type: "array",
+        });
+        const blob = new Blob([excelBuffer], {
+          type: "application/octet-stream",
+        });
+  
+        saveAs(blob, "Delivery Sales.xlsx");
+      } catch (error) {
+        console.error("Export error:", error);
+      }
+    };
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = filteredData.slice(
@@ -107,7 +217,9 @@ export default function DeliveryTable() {
                 className="w-56 rounded-2xl bg-neutral-900 border border-neutral-700 pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
               />
             </div>
-            <button className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white">
+            <button
+              onClick={handleExport}
+              className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white">
               <Download size={14} /> Export
             </button>
           </div>
@@ -137,12 +249,15 @@ export default function DeliveryTable() {
           <tr className="border-b border-neutral-800 text-neutral-500 text-center">
             {[
               { label: "User ID", key: "userid" },
-              { label: "Type", key: "type" },
-              { label: "Gold", key: "gold" },
-              { label: "Status", key: "status" },
               { label: "Seller", key: "seller" },
               { label: "Manager", key: "manager" },
+              { label: "Gold", key: "gold" },
+
               { label: "Date", key: "date" },
+              { label: "Delivery Fees", key: "deli_fees" },
+              { label: "Service Fees", key: "service_fees" },
+
+
               { label: "Details", key: "details" },
             ].map((col) => (
               <th
@@ -187,29 +302,21 @@ export default function DeliveryTable() {
                 className="border-b border-neutral-800 hover:bg-neutral-800/50"
               >
                 <td className="py-2 px-3 text-center">{s.userid}</td>
-                <td className="py-2 px-3 text-center text-purple-400">
-                  {s.type}
-                </td>
-                <td className="py-2 px-3 text-center">{s.gold}</td>
-                <td
-                  className={`py-2 px-3 text-center font-semibold ${
-                    s.status === "approved"
-                      ? "text-green-400"
-                      : s.status === "pending"
-                      ? "text-yellow-400"
-                      : "text-red-400"
-                  }`}
-                >
-                  {s.status}
-                </td>
                 <td className="py-2 px-3 text-center">{s.seller || "-"}</td>
                 <td className="py-2 px-3 text-center">{s.manager || "-"}</td>
+
+                <td className="py-2 px-3 text-center">{s.gold}</td>
+
                 <td className="py-2 px-3 text-center">
                   {s.date.toLocaleDateString()}
                 </td>
+                <td className="py-2 px-3 text-center">{s.deli_fees || "-"}</td>
+                <td className="py-2 px-3 text-center">
+                  {s.service_fees || "-"}
+                </td>
+
                 <td className="py-2 px-3 flex justify-center">
-        
-                    <button
+                  <button
                     onClick={() => setSelectedTxn(s)}
                     className="flex items-center justify-center gap-1 px-3 py-1.5 text-sm font-medium rounded-full bg-yellow-600 text-white hover:bg-yellow-500 transition-all duration-200"
                   >

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Trash2, Mail } from "lucide-react";
 
-export default function UserDetailModal({ viewUser, onClose, handleDelete, sendMessage }) {
+export default function UserDetailModal({ viewUser, onClose, handleDelete }) {
   const [previewPhoto, setPreviewPhoto] = useState(null); // for photo preview
 
   if (!viewUser) return null;
@@ -100,7 +100,7 @@ export default function UserDetailModal({ viewUser, onClose, handleDelete, sendM
           </div>
 
           {/* Info Grid */}
-          <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-white/80 text-sm mb-6">
+          <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-white/80 text-sm">
             {[
               { label: "ID Type", value: viewUser.id_type },
               { label: "ID Number", value: viewUser.id_number },
@@ -132,12 +132,7 @@ export default function UserDetailModal({ viewUser, onClose, handleDelete, sendM
               <Trash2 className="h-4 w-4" /> Delete
             </button>
 
-            <button
-              onClick={() => sendMessage(viewUser)}
-              className="flex items-center gap-1 px-3 py-1 bg-sky-600 hover:bg-sky-700 rounded text-white text-sm"
-            >
-              <Mail className="h-4 w-4" /> Message
-            </button>
+       
           </div>
         </div>
       </div>

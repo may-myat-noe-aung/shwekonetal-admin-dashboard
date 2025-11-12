@@ -182,7 +182,7 @@ export default function UserTableWithSummary() {
                     setRoleFilter(r);
                     setPage(1);
                   }}
-                  className={`px-3 py-1 rounded-full border border-neutral-700 text-sm ${
+                  className={`px-3 py-1 rounded-full border border-neutral-700 text-sm mr-4 ${
                     roleFilter === r
                       ? "bg-yellow-500 text-black font-semibold"
                       : "text-yellow-400 hover:bg-neutral-900"

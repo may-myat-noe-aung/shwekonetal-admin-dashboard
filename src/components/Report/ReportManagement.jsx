@@ -204,8 +204,8 @@ export default function ReportManagement() {
           <ServerToggle />
         </div>
 
-{/* --- Gold Summary + Add Gold --- */}
- {/* --- Gold Summary + Add Gold --- */}
+        {/* --- Gold Summary + Add Gold --- */}
+        {/* --- Gold Summary + Add Gold --- */}
         <section className="w-full">
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6 space-y-4">
             <h3 className="font-semibold text-lg">Add New Gold</h3>
@@ -278,9 +278,7 @@ export default function ReportManagement() {
               </div>
             </div>
           </div>
-        </section> pls so that part responsive
-
-
+        </section>
 
         {/* --- Tables --- */}
         <section className="grid grid-cols-1 lg:grid-cols-1 gap-4">
@@ -315,20 +313,19 @@ export default function ReportManagement() {
               Enter Passcode to Add Gold
             </h3>
 
-       <input
-  type="password"
-  value={passcodeInput}
-  onChange={(e) => setPasscodeInput(e.target.value)}
-  placeholder="Enter password"
-  className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      verifyPasscode();
-    }
-  }}
-  autoFocus
-/>
-
+            <input
+              type="password"
+              value={passcodeInput}
+              onChange={(e) => setPasscodeInput(e.target.value)}
+              placeholder="Enter password"
+              className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  verifyPasscode();
+                }
+              }}
+              autoFocus
+            />
 
             <div className="flex justify-between">
               <button
