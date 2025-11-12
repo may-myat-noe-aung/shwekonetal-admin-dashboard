@@ -49,11 +49,118 @@ export default function ReportManagement() {
     fetchGold();
   }, []);
 
+  // 🟡 Step 1: When clicking "Add Gold" → Show passcode modal
   const handleAddGold = () => {
     setPasscodeInput("");
     setPasscodeError("");
-    setCountdown(10);
-    setPasscodeModalOpen(true);
+    setPasscodeModalOpen(true); // ✅ open modal
+  };
+
+  // 🟢 Step 2: When submitting passcode → Verify first, then Add Gold if correct
+  const verifyPasscode = async () => {
+    // ✅ Close modal immediately when Confirm is clicked
+    setPasscodeModalOpen(false);
+
+    try {
+      // 🟡 Step 1: Verify passcode
+      const verifyRes = await fetch(
+        "http://38.60.244.74:3000/admin/verify-admin-passcode",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ passcode: passcodeInput }),
+        }
+      );
+
+      const verifyData = await verifyRes.json();
+      console.log("🔐 Passcode verify response:", verifyData);
+
+      if (!verifyData.success && verifyData.message !== "verified") {
+        alert("❌ Incorrect passcode!");
+        return;
+      }
+
+      // 🟢 Step 2: Passcode correct → Add gold
+      const payload = {
+        kyat: addGold.kyat,
+        pal: addGold.petha,
+        yway: addGold.yway,
+      };
+
+      const res = await fetch("http://38.60.244.74:3000/open-stock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      console.log("💰 Add gold response:", data);
+
+      if (data.success || data.message === "updated" || data.status === "ok") {
+        setInitialGold({
+          kyat: Number(data.kyat || 0),
+          petha: Number(data.pal || 0),
+          yway: Number(data.yway || 0),
+        });
+        setTotalStr(data.total || "");
+        setAddGold({ kyat: 0, petha: 0, yway: 0 });
+
+        alert("✅ Gold updated successfully!");
+      } else {
+        alert(data.message || "Failed to add gold");
+      }
+    } catch (err) {
+      console.error("❌ Error verifying passcode or adding gold:", err);
+      alert("Error contacting server");
+    }
+  };
+
+  const handlePasswordSubmit = async () => {
+    if (!password) {
+      alert("Please enter password");
+      return;
+    }
+
+    try {
+      // --- Verify passcode dynamically ---
+      const verifyResponse = await axios.post(
+        "http://38.60.244.74:3000/admin/verify-admin-passcode",
+        { passcode: password }
+      );
+
+      if (!verifyResponse.data.success) {
+        alert("Incorrect password!");
+        return;
+      }
+
+      // --- Submit gold update ---
+      await axios.post(`${API_BASE}/formula`, { kyat, yway });
+
+      const newRow = {
+        kyat,
+        yway,
+        id: `FM${Date.now()}`,
+        date: new Date().toLocaleDateString(),
+        time: new Date().toLocaleTimeString(),
+      };
+
+      setGoldList((prev) => [...prev, newRow]);
+      setLastUpdate({ kyat, yway });
+
+      // ✅ Close modal first
+      setShowModal(false);
+
+      // ✅ Reset input & passcode after closing
+      setKyat(1);
+      setPassword("");
+
+      // ✅ Then show success alert after slight delay
+      setTimeout(() => {
+        alert("Gold conversion updated successfully!");
+      }, 300);
+    } catch (err) {
+      alert("Verification failed!");
+    }
   };
 
   // Live fetch gold every 1 second
@@ -82,58 +189,11 @@ export default function ReportManagement() {
     fetchGold();
 
     // Fetch every 1 second
-    interval = setInterval(fetchGold, 1000);
+    interval = setInterval(fetchGold, 500);
 
     // Cleanup on unmount
     return () => clearInterval(interval);
   }, []);
-
-  const verifyPasscode = async () => {
-    if (passcodeInput === "1234") {
-      try {
-        // Make POST request to update gold
-        const payload = {
-          kyat: addGold.kyat,
-          pal: addGold.petha,
-          yway: addGold.yway,
-        };
-
-        const res = await fetch("http://38.60.244.74:3000/open-stock", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-          // Update state
-          setInitialGold({
-            kyat: Number(data.kyat || 0),
-            petha: Number(data.pal || 0),
-            yway: Number(data.yway || 0),
-          });
-          setTotalStr(data.total || "");
-          setAddGold({ kyat: 0, petha: 0, yway: 0 });
-
-          // Close modal first
-          setPasscodeModalOpen(false);
-
-          // Then show alert (after modal is closed)
-          setTimeout(() => {
-            alert("Gold updated successfully");
-          }, 0);
-        } else {
-          setPasscodeError(data.message || "Failed to add gold");
-        }
-      } catch (err) {
-        console.error("Error adding gold:", err);
-        setPasscodeError("Error contacting server");
-      }
-    } else {
-      setPasscodeError("Incorrect passcode!");
-    }
-  };
 
   const handleResetAddGold = () => setAddGold({ kyat: 0, petha: 0, yway: 0 });
 
@@ -144,7 +204,8 @@ export default function ReportManagement() {
           <ServerToggle />
         </div>
 
-        {/* --- Gold Summary + Add Gold --- */}
+{/* --- Gold Summary + Add Gold --- */}
+ {/* --- Gold Summary + Add Gold --- */}
         <section className="w-full">
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-6 space-y-4">
             <h3 className="font-semibold text-lg">Add New Gold</h3>
@@ -217,7 +278,9 @@ export default function ReportManagement() {
               </div>
             </div>
           </div>
-        </section>
+        </section> pls so that part responsive
+
+
 
         {/* --- Tables --- */}
         <section className="grid grid-cols-1 lg:grid-cols-1 gap-4">
@@ -241,63 +304,54 @@ export default function ReportManagement() {
       {passcodeModalOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 relative">
-            {countdown === 10 && (
-              <button
-                onClick={() => setPasscodeModalOpen(false)}
-                className="absolute top-2 right-2 text-neutral-400 hover:text-white"
-              >
-                <X size={18} />
-              </button>
-            )}
+            <button
+              onClick={() => setPasscodeModalOpen(false)}
+              className="absolute top-2 right-2 text-neutral-400 hover:text-white"
+            >
+              <X size={18} />
+            </button>
 
             <h3 className="text-lg font-semibold mb-4 text-center">
-              {countdown === 10
-                ? "Enter Passcode to Add Gold"
-                : `Updating in ${countdown}s...`}
+              Enter Passcode to Add Gold
             </h3>
 
-            {countdown === 10 ? (
-              <>
-                <input
-                  type="password"
-                  value={passcodeInput}
-                  onChange={(e) => setPasscodeInput(e.target.value)}
-                  placeholder="Enter password"
-                  className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
-                />
+       <input
+  type="password"
+  value={passcodeInput}
+  onChange={(e) => setPasscodeInput(e.target.value)}
+  placeholder="Enter password"
+  className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      verifyPasscode();
+    }
+  }}
+  autoFocus
+/>
 
-                <div className="flex justify-between">
-                  <button
-                    onClick={() => setPasscodeModalOpen(false)}
-                    className="bg-neutral-700 text-white px-3 py-2 rounded-md text-sm"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={verifyPasscode}
-                    className="bg-yellow-500 text-black px-3 py-2 rounded-md text-sm"
-                  >
-                    Confirm
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center">
-                <div className="w-full bg-neutral-800 rounded-full h-2 mb-3">
-                  <div
-                    className="bg-yellow-500 h-2 rounded-full transition-all duration-1000"
-                    style={{ width: `${(countdown / 10) * 100}%` }}
-                  ></div>
-                </div>
-                <button
-                  onClick={() => {
-                    setCountdown(10);
-                    setPasscodeModalOpen(false);
-                  }}
-                  className="bg-red-500 text-black px-3 py-2 rounded-md text-sm"
-                >
-                  Cancel Update
-                </button>
+
+            <div className="flex justify-between">
+              <button
+                onClick={() => setPasscodeModalOpen(false)}
+                className="bg-neutral-700 text-white px-3 py-2 rounded-md text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={verifyPasscode}
+                className="bg-yellow-500 text-black px-3 py-2 rounded-md text-sm"
+              >
+                Confirm
+              </button>
+            </div>
+
+            {/* Countdown progress (optional) */}
+            {countdown < 10 && (
+              <div className="mt-4 w-full bg-neutral-800 rounded-full h-2">
+                <div
+                  className="bg-yellow-500 h-2 rounded-full transition-all duration-1000"
+                  style={{ width: `${(countdown / 10) * 100}%` }}
+                ></div>
               </div>
             )}
           </div>

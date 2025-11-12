@@ -45,32 +45,31 @@ export default function BuyTable() {
     fetchData();
   }, []);
 
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/buyTable`);
-      const data = await res.json();
-      if (data.success) {
-        // Table data (for sorting/filtering)
-        const formatted = data.data.map((item) => ({
-          ...item,
-          date: new Date(item.created_at),
-        }));
-        setBuyData(formatted);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/buyTable`);
+        const data = await res.json();
+        if (data.success) {
+          // Table data (for sorting/filtering)
+          const formatted = data.data.map((item) => ({
+            ...item,
+            date: new Date(item.created_at),
+          }));
+          setBuyData(formatted);
 
-        // Totals from API (no computation)
-        setPriceTotal(data.priceTotal);
-        setGoldTotal(data.goldTotal);
+          // Totals from API (no computation)
+          setPriceTotal(data.priceTotal);
+          setGoldTotal(data.goldTotal);
+        }
+      } catch (err) {
+        console.error("Error fetching buyTable:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Error fetching buyTable:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  fetchData();
-}, []);
-
+    };
+    fetchData();
+  }, []);
 
   // ✅ Sorting
   const requestSort = (key) => {
@@ -126,26 +125,6 @@ useEffect(() => {
     page * itemsPerPage
   );
 
-  // ✅ Export CSV
-  const exportCSV = () => {
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      ["UserID,Gold,Type,Price,Method,Status,Date,Time"]
-        .concat(
-          filteredData.map(
-            (d) =>
-              `${d.userid},${d.gold},${d.type},${d.price},${d.method},${
-                d.status
-              },${d.date.toLocaleDateString()},${d.date.toLocaleTimeString()}`
-          )
-        )
-        .join("\n");
-    const a = document.createElement("a");
-    a.href = encodeURI(csvContent);
-    a.download = "buyTable.csv";
-    a.click();
-  };
-
   return (
     <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 overflow-x-auto">
       {/* Header */}
@@ -168,10 +147,7 @@ useEffect(() => {
               />
             </div>
 
-            <button
-              onClick={exportCSV}
-              className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
-            >
+            <button className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white">
               <Download size={14} /> Export
             </button>
           </div>
@@ -293,13 +269,12 @@ useEffect(() => {
                   {s.status}
                 </td>
                 <td className="py-2 px-3 text-center">
-              <button
-  onClick={() => setSelectedTxn(s)}
-  className="flex items-center justify-center gap-1 px-3 py-1.5 text-sm font-medium rounded-full bg-yellow-600 text-white hover:bg-yellow-500 transition-all duration-200"
->
-  <Info size={14} /> Details
-</button>
-
+                  <button
+                    onClick={() => setSelectedTxn(s)}
+                    className="flex items-center justify-center gap-1 px-3 py-1.5 text-sm font-medium rounded-full bg-yellow-600 text-white hover:bg-yellow-500 transition-all duration-200"
+                  >
+                    <Info size={14} /> Details
+                  </button>
                 </td>
               </tr>
             ))
@@ -354,127 +329,146 @@ useEffect(() => {
       </div>
 
       {/* --- Details Popup --- */}
-  {/* --- BUY TRANSACTION DETAILS --- */}
-{selectedTxn && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-    <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-full max-w-lg relative">
-      <button
-        onClick={() => setSelectedTxn(null)}
-        className="absolute top-3 right-3 text-neutral-400 hover:text-neutral-200"
-      >
-        ✕
-      </button>
+      {/* --- BUY TRANSACTION DETAILS --- */}
+      {selectedTxn && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-full max-w-lg relative">
+            <button
+              onClick={() => setSelectedTxn(null)}
+              className="absolute top-3 right-3 text-neutral-400 hover:text-neutral-200"
+            >
+              ✕
+            </button>
 
-      <h2 className="text-lg font-semibold mb-4 text-yellow-400">
-        {selectedTxn.id}
-      </h2>
+            <h2 className="text-lg font-semibold mb-4 text-green-400">
+              {selectedTxn.fullname}
+            </h2>
 
-      {/* --- Dynamic Content based on type --- */}
-      {selectedTxn.type === "buy" ? (
-        <div className="bg-green-900/20 p-4 rounded-xl mb-4">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-5">
-            <p>
-              <span className="text-neutral-400">Full Name -</span>{" "}
-              {selectedTxn.fullname || "-"}
-            </p>
-            <p>
-              <span className="text-neutral-400">User ID -</span>{" "}
-              {selectedTxn.userid || "-"}
-            </p>
-            <p>
-              <span className="text-neutral-400">Type -</span>{" "}
-              <span className="font-semibold px-2 py-1 rounded-full text-green-400 bg-green-900/20">
-                {selectedTxn.type || "-"}
-              </span>
-            </p>
-            <p>
-              <span className="text-neutral-400">Gold -</span>{" "}
-              {selectedTxn.gold || "-"}
-            </p>
-            <p>
-              <span className="text-neutral-400">Amount -</span>{" "}
-              {selectedTxn.price?.toLocaleString() || "-"} Ks
-            </p>
-            <p>
-              <span className="text-neutral-400">Payment Method -</span>{" "}
-              {selectedTxn.method || "-"}
-            </p>
-            <p>
-              <span className="text-neutral-400">Status -</span>{" "}
-              <span
-                className={`font-semibold px-2 py-1 rounded-full ${
-                  selectedTxn.status === "approved"
-                    ? "text-emerald-400 bg-emerald-900/20"
-                    : selectedTxn.status === "pending"
-                    ? "text-yellow-400 bg-yellow-900/20"
-                    : "text-rose-400 bg-rose-900/20"
-                }`}
-              >
-                {selectedTxn.status || "-"}
-              </span>
-            </p>
-            <p>
-              <span className="text-neutral-400">Date -</span>{" "}
-              {selectedTxn.date ? selectedTxn.date.toLocaleDateString() : "-"}
-            </p>
-            <p>
-              <span className="text-neutral-400">Time -</span>{" "}
-              {selectedTxn.date ? selectedTxn.date.toLocaleTimeString() : "-"}
-            </p>
-          </div>
-        </div>
-      ) : (
-        // Delivery transaction UI (you can style differently)
-        <div className="bg-blue-900/20 p-4 rounded-xl mb-4">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-5">
-            <p>
-              <span className="text-neutral-400">User ID -</span>{" "}
-              {selectedTxn.userid || "-"}
-            </p>
-            <p>
-              <span className="text-neutral-400">Gold -</span>{" "}
-              {selectedTxn.gold || "-"}
-            </p>
-            <p>
-              <span className="text-neutral-400">Type -</span>{" "}
-              {selectedTxn.type || "-"}
-            </p>
-            <p>
-              <span className="text-neutral-400">Price -</span>{" "}
-              {selectedTxn.price?.toLocaleString() || "-"} Ks
-            </p>
-            <p>
-              <span className="text-neutral-400">Method -</span>{" "}
-              {selectedTxn.method || "-"}
-            </p>
-            <p>
-              <span className="text-neutral-400">Status -</span>{" "}
-              {selectedTxn.status || "-"}
-            </p>
-            <p>
-              <span className="text-neutral-400">Date -</span>{" "}
-              {selectedTxn.date ? selectedTxn.date.toLocaleString() : "-"}
-            </p>
+            {/* --- Dynamic Content based on type --- */}
+            {selectedTxn.type === "buy" ? (
+              <div className="bg-green-900/20 p-4 rounded-xl mb-4">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-5">
+                  <p>
+                    <span className="text-neutral-400">Full Name -</span>{" "}
+                    {selectedTxn.fullname || "-"}
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">User ID -</span>{" "}
+                    {selectedTxn.userid || "-"}
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">Type -</span>{" "}
+                    <span className="font-semibold px-2 py-1 rounded-full text-green-400 bg-green-900/20">
+                      {selectedTxn.type || "-"}
+                    </span>
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">Gold -</span>{" "}
+                    {selectedTxn.gold || "-"}
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">Amount -</span>{" "}
+                    {selectedTxn.price?.toLocaleString() || "-"} Ks
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">Payment Method -</span>{" "}
+                    {selectedTxn.method || "-"}
+                  </p>
+                
+
+                     <p>
+        <span className="text-neutral-400">Seller -</span> {selectedTxn.seller || "-"}
+      </p>
+      <p>
+        <span className="text-neutral-400">Manager -</span> {selectedTxn.manager || "-"}
+      </p>
+                  <p>
+                    <span className="text-neutral-400">Date -</span>{" "}
+                    {selectedTxn.date
+                      ? selectedTxn.date.toLocaleDateString()
+                      : "-"}
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">Time -</span>{" "}
+                    {selectedTxn.date
+                      ? selectedTxn.date.toLocaleTimeString()
+                      : "-"}
+                  </p>
+                    <p>
+                    <span className="text-neutral-400">Status -</span>{" "}
+                    <span
+                      className={`font-semibold px-2 py-1 rounded-full ${
+                        selectedTxn.status === "approved"
+                          ? "text-emerald-400 bg-emerald-900/20"
+                          : selectedTxn.status === "pending"
+                          ? "text-yellow-400 bg-yellow-900/20"
+                          : "text-rose-400 bg-rose-900/20"
+                      }`}
+                    >
+                      {selectedTxn.status || "-"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              // Delivery transaction UI (you can style differently)
+              <div className="bg-blue-900/20 p-4 rounded-xl mb-4">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-5">
+                  <p>
+                    <span className="text-neutral-400">User ID -</span>{" "}
+                    {selectedTxn.userid || "-"}
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">Gold -</span>{" "}
+                    {selectedTxn.gold || "-"}
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">Type -</span>{" "}
+                    {selectedTxn.type || "-"}
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">Price -</span>{" "}
+                    {selectedTxn.price?.toLocaleString() || "-"} ကျပ်
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">Method -</span>{" "}
+                    {selectedTxn.method || "-"}
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">Status -</span>{" "}
+                    {selectedTxn.status || "-"}
+                  </p>
+                  <p>
+                       <p>
+        <span className="text-neutral-400">Seller -</span> {selectedTxn.seller || "-"}
+      </p>
+      <p>
+        <span className="text-neutral-400">Manager -</span> {selectedTxn.manager || "-"}
+      </p>
+                    
+                    <span className="text-neutral-400">Date -</span>{" "}
+                    {selectedTxn.date ? selectedTxn.date.toLocaleString() : "-"}
+                  </p>
+                  
+                </div>
+              </div>
+            )}
+
+            {/* --- Photos --- */}
+            <div className="flex gap-2 overflow-x-auto">
+              {selectedTxn.photos?.map((file, idx) => (
+                <img
+                  key={idx}
+                  src={`${API_BASE}/uploads/${file}`}
+                  alt="Proof"
+                  onClick={() => setPreviewImg(`${API_BASE}/uploads/${file}`)}
+                  className="w-28 h-40 object-cover border border-neutral-700 rounded-lg cursor-pointer hover:scale-105 transition"
+                />
+              ))}
+            </div>
           </div>
         </div>
       )}
-
-      {/* --- Photos --- */}
-      <div className="flex gap-2 overflow-x-auto">
-        {selectedTxn.photos?.map((file, idx) => (
-          <img
-            key={idx}
-            src={`${API_BASE}/uploads/${file}`}
-            alt="Proof"
-            onClick={() => setPreviewImg(`${API_BASE}/uploads/${file}`)}
-            className="w-28 h-40 object-cover border border-neutral-700 rounded-lg cursor-pointer hover:scale-105 transition"
-          />
-        ))}
-      </div>
-    </div>
-  </div>
-)}
-
 
       {/* Photo Preview */}
       {previewImg && (

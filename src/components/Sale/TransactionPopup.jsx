@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
 import MiniChat from "./MiniChat";
+import React, { useState, useEffect, useRef } from "react";
 
 export default function TransactionPopup({
   txn,
@@ -21,35 +21,6 @@ export default function TransactionPopup({
 
   const isPending = txn.status === "pending";
 
-  // const handleConfirm = async () => {
-  //   if (passcode !== "1234") return alert("❌ Wrong passcode!");
-  //   try {
-  //     const type = showPasscode.type;
-  //     setActionTaken(type);
-  //     const url =
-  //       type === "approve"
-  //         ? `http://38.60.244.74:3000/sales/approve/${txn.id}`
-  //         : `http://38.60.244.74:3000/sales/reject/${txn.id}`;
-
-  //     const res = await fetch(url, { method: "PATCH" });
-  //     if (!res.ok) throw new Error("Request failed");
-
-  //     updateStatus(txn.id, type === "approve" ? "approved" : "rejected");
-  //     alert(
-  //       type === "approve"
-  //         ? "✅ Transaction approved successfully!"
-  //         : "🚫 Transaction rejected successfully!"
-  //     );
-  //   } catch (err) {
-  //     console.error(err);
-  //     alert("❌ Failed to process transaction");
-  //   } finally {
-  //     setShowPasscode(false);
-  //     setPasscode("");
-  //     setActionTaken("none");
-  //   }
-  // };
-  // --- Preload adminData from localStorage on mount ---
   const adminId = localStorage.getItem("adminId");
 
   // --- Fetch admin data (same way as Header) ---
@@ -131,7 +102,15 @@ export default function TransactionPopup({
       setActionTaken("none");
     }
   };
-  
+
+  const deliveryFeeRef = useRef(null);
+
+  useEffect(() => {
+    if (txn.type === "delivery" && txn.status === "pending") {
+      deliveryFeeRef.current?.focus();
+    }
+  }, [txn]);
+
   return (
     <>
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
@@ -143,7 +122,7 @@ export default function TransactionPopup({
             ✕
           </button>
 
-          <h2 className="text-lg font-semibold mb-4 text-blue-400">
+          <h2 className="text-lg font-semibold mb-4 text-white">
             {txn.fullname}
           </h2>
 
@@ -211,7 +190,7 @@ export default function TransactionPopup({
 
           {/* --- SELL TRANSACTION --- */}
           {txn.type === "sell" && (
-            <div className="bg-blue-900/20 p-4 rounded-xl mb-4">
+            <div className="bg-red-900/20 p-4 rounded-xl mb-4">
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-5">
                 <p>
                   <span className="text-neutral-400">Full Name -</span>{" "}
@@ -223,7 +202,7 @@ export default function TransactionPopup({
                 </p>
                 <p>
                   <span className="text-neutral-400">Type -</span>{" "}
-                  <span className="font-semibold px-2 py-1 rounded-full text-blue-400 bg-blue-900/20">
+                  <span className="font-semibold px-2 py-1 rounded-full text-red-400 bg-red-900/20">
                     {txn.type || "-"}
                   </span>
                 </p>
@@ -255,8 +234,8 @@ export default function TransactionPopup({
                 </p>
 
                 {/* 💳 PAYMENT GROUP */}
-                <div className="col-span-2 bg-blue-950/30 border border-blue-800/40 rounded-xl p-3 mt-3">
-                  <p className="font-medium text-blue-300 mb-2">
+                <div className="col-span-2 bg-red-950/30 border border-red-800/40 rounded-xl p-3 mt-3">
+                  <p className="font-medium text-red-300 mb-2">
                     💰 Payment Info
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-[16px]">
@@ -281,91 +260,6 @@ export default function TransactionPopup({
               </div>
             </div>
           )}
-
-          {/* --- DELIVERY TRANSACTION --- */}
-          {/* {txn.type === "delivery" && (
-            <div className="bg-purple-900/20 p-4 rounded-xl mb-4">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-5">
-                <div className="col-span-2 rounded-xl p-3">
-                  <p className="font-medium text-purple-300 mb-2">
-                    🧍 Customer Info
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <p>
-                      <span className="text-neutral-400">Full Name -</span>{" "}
-                      {txn.fullname || "-"}
-                    </p>
-                    <p>
-                      <span className="text-neutral-400">Phone -</span>{" "}
-                      {txn.payment_phone || "-"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="col-span-2 bg-purple-950/30 border border-purple-800/40 rounded-xl p-3">
-                  <p className="font-medium text-purple-300 mb-2">
-                    📦 Delivery Info
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 text-[16px]">
-                    <p className="col-span-2">
-                      <span className="text-neutral-400">
-                        Delivery Address -
-                      </span>{" "}
-                      {txn.address || "-"}
-                    </p>
-                    <p>
-                      <span className="text-neutral-400">Delivery Type -</span>{" "}
-                      {txn.deli_type || "-"}
-                    </p>
-                    <p>
-                      <span className="text-neutral-400">Gold -</span>{" "}
-                      {txn.gold || "-"}
-                    </p>
-                    <p className="">
-                      <span className="text-neutral-400">Status -</span>{" "}
-                      <span
-                        className={`font-semibold px-2 py-1 rounded-full ${
-                          txn.status === "approved"
-                            ? "text-emerald-400 bg-emerald-900/20"
-                            : txn.status === "pending"
-                            ? "text-yellow-400 bg-yellow-900/20"
-                            : "text-rose-400 bg-rose-900/20"
-                        }`}
-                      >
-                        {txn.status || "-"}
-                      </span>
-                    </p>
-                    <div className=" flex gap-4">
-                      <div>
-                        <label className="text-sm text-neutral-400">
-                          Delivery Fee
-                        </label>
-                        <input
-                          type="text"
-                          value={deliveryFee}
-                          onChange={(e) => setDeliveryFee(e.target.value)}
-                          disabled={!isPending}
-                          className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-sm text-neutral-400">
-                          Service Fee
-                        </label>
-                        <input
-                          type="text"
-                          value={serviceFee}
-                          onChange={(e) => setServiceFee(e.target.value)}
-                          disabled={!isPending}
-                          className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )} */}
           {/* --- DELIVERY TRANSACTION --- */}
           {txn.type === "delivery" && (
             <div>
@@ -383,6 +277,32 @@ export default function TransactionPopup({
                       <p>
                         <span className="text-neutral-400">Phone -</span>{" "}
                         {txn.payment_phone || "-"}
+                      </p>
+                      <p>
+                        <span className="text-neutral-400">Date -</span>{" "}
+                        {txn.date
+                          ? new Date(txn.date).toLocaleDateString()
+                          : "-"}
+                      </p>
+                      <p>
+                        <span className="text-neutral-400">Time -</span>{" "}
+                        {txn.date
+                          ? new Date(txn.date).toLocaleTimeString()
+                          : "-"}
+                      </p>
+                      <p className="mt-2">
+                        <span className="text-neutral-400">Status -</span>{" "}
+                        <span
+                          className={`font-semibold px-2 py-1 rounded-full ${
+                            txn.status === "approved"
+                              ? "text-emerald-400 bg-emerald-900/20"
+                              : txn.status === "pending"
+                              ? "text-yellow-400 bg-yellow-900/20"
+                              : "text-rose-400 bg-rose-900/20"
+                          }`}
+                        >
+                          {txn.status || "-"}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -408,75 +328,34 @@ export default function TransactionPopup({
                         <span className="text-neutral-400">Gold -</span>{" "}
                         {txn.gold || "-"}
                       </p>
-                      <p>
-                        <span className="text-neutral-400">Status -</span>{" "}
-                        <span
-                          className={`font-semibold px-2 py-1 rounded-full ${
-                            txn.status === "approved"
-                              ? "text-emerald-400 bg-emerald-900/20"
-                              : txn.status === "pending"
-                              ? "text-yellow-400 bg-yellow-900/20"
-                              : "text-rose-400 bg-rose-900/20"
-                          }`}
-                        >
-                          {txn.status || "-"}
-                        </span>
-                      </p>
 
-                      {/* --- Fees Inputs: ONLY show when pending --- */}
-                      {/* {txn.status === "pending" && txn.type === "delivery" && (
-                      <form
-                        id="myForm"
-                        onSubmit={(e) => {
-                          e.preventDefault(); // prevent default form submission
-                          setShowPasscode({ type: "approve" });
-                        }}
-                        className="flex gap-4 col-span-2 mt-2"
-                      >
-                        <div>
-                          <label className="text-sm text-neutral-400">
-                            Delivery Fee
-                          </label>
-                          <input
-                            type="text"
-                            value={deliveryFee}
-                            onChange={(e) => setDeliveryFee(e.target.value)}
-                            required
-                            className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-sm text-neutral-400">
-                            Service Fee
-                          </label>
-                          <input
-                            type="text"
-                            value={serviceFee}
-                            onChange={(e) => setServiceFee(e.target.value)}
-                            required
-                            className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
-                          />
-                        </div>
-                      </form>
-                    )} */}
+                      <p>
+                        <span className="text-neutral-400">Delivery Fee -</span>{" "}
+                        {txn.deli_fees?.toLocaleString() || deliveryFee || "-"}{" "}
+                        ကျပ်
+                      </p>
+                      <p>
+                        <span className="text-neutral-400">Service Fee -</span>{" "}
+                        {txn.service_fees?.toLocaleString() ||
+                          serviceFee ||
+                          "-"}{" "}
+                        ကျပ်
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
+
               <div>
                 {txn.status === "pending" && txn.type === "delivery" && (
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault(); // prevent page reload
-                      setShowPasscode({ type: "approve" });
-                    }}
-                  >
+                  <div>
                     <div className="flex gap-4 mb-8">
                       <div>
                         <label className="text-sm text-neutral-400">
                           Delivery Fee
                         </label>
                         <input
+                          ref={deliveryFeeRef}
                           type="number"
                           value={deliveryFee}
                           onChange={(e) =>
@@ -502,10 +381,11 @@ export default function TransactionPopup({
                       </div>
                     </div>
 
-                    {/* --- Transfer Button inside form --- */}
-                    <div className="flex justify-end gap-3 ">
+                    {/* --- Transfer / Reject / Message Buttons --- */}
+                    <div className="flex justify-end gap-3">
                       <button
-                        type="submit"
+                        type="button" // not submit
+                        onClick={() => setShowPasscode({ type: "approve" })}
                         className={`px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-sm ${
                           actionTaken !== "none"
                             ? "opacity-50 cursor-not-allowed"
@@ -536,7 +416,7 @@ export default function TransactionPopup({
                         💬 Message
                       </button>
                     </div>
-                  </form>
+                  </div>
                 )}
               </div>
             </div>
@@ -544,7 +424,7 @@ export default function TransactionPopup({
 
           {/* --- Photos --- */}
           {txn.type !== "sell" && (
-            <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
+            <div className="flex gap-2 mb-6 overflow-hidden scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
               {txn.photos?.map((fileName, idx) => (
                 <img
                   key={idx}
@@ -570,6 +450,7 @@ export default function TransactionPopup({
                   txn.type !== "delivery" && (
                     <>
                       <button
+                        type="button" // add this
                         onClick={() => setShowPasscode({ type: "approve" })}
                         className={`px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-sm ${
                           actionTaken !== "none"
@@ -581,6 +462,7 @@ export default function TransactionPopup({
                       </button>
 
                       <button
+                        type="button" // add this
                         onClick={() => setShowPasscode({ type: "reject" })}
                         className={`px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-sm ${
                           actionTaken !== "none"
@@ -599,6 +481,7 @@ export default function TransactionPopup({
             <div className="flex justify-end gap-3">
               {!(txn.type === "delivery" && txn.status === "pending") && (
                 <button
+                  type="button" // add this
                   onClick={() => setShowChat(true)}
                   className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-sm"
                 >
@@ -621,29 +504,36 @@ export default function TransactionPopup({
       {showPasscode && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60]">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl p-6 w-[320px] text-center">
-            <h3 className="text-yellow-400 font-semibold mb-4">
-              Enter Passcode
+            {/* Title */}
+            <h3 className="text-white font-semibold mb-4">
+              Enter Passcode to Confirm
             </h3>
+
+            {/* Password Input */}
             <input
               type="password"
               value={passcode}
               onChange={(e) => setPasscode(e.target.value)}
               placeholder="••••••"
-              className="w-full p-2 rounded-lg bg-neutral-800 border border-neutral-700 text-center tracking-widest text-lg mb-4"
+              className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
             />
-            <div className="flex justify-center gap-3">
+
+            {/* Action Buttons */}
+            <div className="flex justify-between gap-3">
               <button
+                type="button"
                 onClick={() => {
                   setShowPasscode(false);
                   setPasscode("");
                 }}
-                className="px-3 py-1.5 rounded-lg bg-neutral-700 hover:bg-neutral-600"
+                className="bg-neutral-700 text-white px-3 py-2 rounded-md text-sm"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleConfirm}
-                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700"
+                className="bg-yellow-500 text-neutral-800 px-3 py-2 rounded-md text-sm"
               >
                 Confirm
               </button>
@@ -651,6 +541,7 @@ export default function TransactionPopup({
           </div>
         </div>
       )}
+
       {/* --- Photo Preview Modal --- */}
       {previewImg && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[70]">

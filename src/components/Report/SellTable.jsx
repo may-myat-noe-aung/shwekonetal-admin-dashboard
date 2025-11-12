@@ -95,40 +95,7 @@ export default function SellTable() {
     page * itemsPerPage
   );
 
-  const exportCSV = () => {
-    const csv = [
-      [
-        "User ID",
-        "Type",
-        "Gold",
-        "Price",
-        "Status",
-        "Date",
-        "Method",
-        "Payment Name",
-        "Payment Phone",
-      ].join(","),
-      ...sales.map((s) =>
-        [
-          s.userid,
-          s.type,
-          s.gold,
-          s.price,
-          s.status,
-          s.date.toISOString(),
-          s.method,
-          s.payment_name,
-          s.payment_phone,
-        ].join(",")
-      ),
-    ].join("\n");
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "sell_transactions.csv";
-    link.click();
-  };
 
   return (
     <>
@@ -152,7 +119,6 @@ export default function SellTable() {
             </div>
 
             <button
-              onClick={exportCSV}
               className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
             >
               <Download size={14} /> Export
@@ -233,7 +199,7 @@ export default function SellTable() {
 
           <tbody>
             {paginatedSales.length === 0 ? (
-              <tr className="h-[480px]">
+              <tr className="h-[150px]">
                 <td colSpan={10} className="text-center py-10 text-neutral-500">
                   No sell transactions found.
                 </td>
@@ -320,7 +286,6 @@ export default function SellTable() {
         </div>
       </div>
 
-      {/* --- Detail Card --- */}
       {/* --- Detail Modal for Sell --- */}
       {selectedTxn && selectedTxn.type === "sell" && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
@@ -334,11 +299,11 @@ export default function SellTable() {
             </button>
 
             {/* Transaction ID */}
-            <h2 className="text-lg font-semibold mb-4 text-yellow-400">
-              {selectedTxn.id}
+            <h2 className="text-lg font-semibold mb-4 text-red-500">
+              {selectedTxn.fullname}
             </h2>
 
-            <div className="bg-blue-900/20 rounded-xl p-3 mb-3 ">
+            <div className="bg-red-900/20 rounded-xl p-3 mb-3 ">
               {/* Info Grid */}
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-5 ">
                 <p>
@@ -351,7 +316,7 @@ export default function SellTable() {
                 </p>
                 <p>
                   <span className="text-neutral-400">Type -</span>{" "}
-                  <span className="font-semibold px-2 py-1 rounded-full text-blue-400 bg-blue-900/20">
+                  <span className="font-semibold px-2 py-1 rounded-full text-red-400 bg-red-900/20">
                     {selectedTxn.type || "-"}
                   </span>
                 </p>
@@ -367,7 +332,27 @@ export default function SellTable() {
                   <span className="text-neutral-400">Method -</span>{" "}
                   {selectedTxn.method || "-"}
                 </p>
+                   <p>
+        <span className="text-neutral-400">Seller -</span> {selectedTxn.seller || "-"}
+      </p>
+      <p>
+        <span className="text-neutral-400">Manager -</span> {selectedTxn.manager || "-"}
+      </p>
+        
+              
                 <p>
+                  <span className="text-neutral-400">Date -</span>{" "}
+                  {selectedTxn.date
+                    ? new Date(selectedTxn.date).toLocaleDateString()
+                    : "-"}
+                </p>
+                <p>
+                  <span className="text-neutral-400">Time -</span>{" "}
+                  {selectedTxn.date
+                    ? new Date(selectedTxn.date).toLocaleTimeString()
+                    : "-"}
+                </p>
+                        <p>
                   <span className="text-neutral-400">Status -</span>{" "}
                   <span
                     className={`font-semibold px-2 py-1 rounded-full ${
@@ -381,23 +366,11 @@ export default function SellTable() {
                     {selectedTxn.status || "-"}
                   </span>
                 </p>
-                <p>
-                  <span className="text-neutral-400">Date -</span>{" "}
-                  {selectedTxn.date
-                    ? new Date(selectedTxn.date).toLocaleDateString()
-                    : "-"}
-                </p>
-                <p>
-                  <span className="text-neutral-400">Time -</span>{" "}
-                  {selectedTxn.date
-                    ? new Date(selectedTxn.date).toLocaleTimeString()
-                    : "-"}
-                </p>
               </div>
 
               {/* Payment Info */}
-              <div className="bg-blue-950/30 border border-blue-800/40 rounded-xl p-3 mb-3">
-                <p className="font-medium text-blue-300 mb-2">
+              <div className="bg-red-950/30 border border-red-800/40 rounded-xl p-3 mb-3">
+                <p className="font-medium text-red-500 mb-2">
                   💰 Payment Info
                 </p>
                 <div className="grid grid-cols-2 gap-2 text-sm">

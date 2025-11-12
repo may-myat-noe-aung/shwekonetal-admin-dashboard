@@ -31,12 +31,14 @@ export default function RevenueTrend() {
             <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
             <XAxis dataKey="month" stroke="#a3a3a3" />
             <YAxis stroke="#a3a3a3" />
-            <Tooltip
-              contentStyle={{
-                background: "#0a0a0a",
-                border: "1px solid #262626",
-              }}
-            />
+      <Tooltip
+  contentStyle={{
+    background: "#0a0a0a",
+    border: "1px solid #262626",
+  }}
+  formatter={(value, name) => [`${value?.toLocaleString()} ရွေး`, "Revenue"]}
+/>
+
             <Bar dataKey="value" fill="#f59e0b" radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>

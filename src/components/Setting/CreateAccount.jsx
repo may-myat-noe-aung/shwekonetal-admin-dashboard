@@ -1,5 +1,5 @@
-// import { X } from "lucide-react";
-// import React, { useState } from "react";
+// import { X, Camera } from "lucide-react";
+// import React, { useState, useEffect } from "react";
 
 // export default function CreateAccount() {
 //   const [newAccount, setNewAccount] = useState({
@@ -18,65 +18,35 @@
 //   const [loading, setLoading] = useState(false);
 
 //   const [showPasscodeModal, setShowPasscodeModal] = useState(false);
-// const [passcode, setPasscode] = useState("");
-// const [saving, setSaving] = useState(false);
+//   const [passcode, setPasscode] = useState("");
+//   const [saving, setSaving] = useState(false);
 
+//   // 🟡 Auto focus Full Name input
+//   useEffect(() => {
+//     const nameInput = document.getElementById("full-name-input");
+//     if (nameInput) nameInput.focus();
+//   }, []);
 
-
-
+//   // Handle field changes
 //   const handleNewChange = (field, value) => {
 //     setNewAccount((prev) => ({ ...prev, [field]: value }));
-//     setErrors((prev) => ({ ...prev, [field]: "" })); // clear error when typing
+//     setErrors((prev) => ({ ...prev, [field]: "" }));
 //   };
 
+//   // Save account function
 //   const handleRegister = async () => {
-//     // Validation
 //     const newErrors = {};
 //     if (!newAccount.name.trim()) newErrors.name = "Name is required";
 //     if (!newAccount.email.trim()) newErrors.email = "Email is required";
-//     if (!newAccount.password.trim()) newErrors.password = "Password is required";
+//     if (!newAccount.password.trim())
+//       newErrors.password = "Password is required";
 //     if (!newAccount.role.trim()) newErrors.role = "Role is required";
 
 //     setErrors(newErrors);
 //     setSuccessMessage("");
 
-//     const handleSaveClick = () => {
-//   setShowPasscodeModal(true);
-//   setPasscode("");
-// };
-
-// const handlePasscodeSubmit = async () => {
-//   if (!passcode.trim()) {
-//     alert("Enter passcode!");
-//     return;
-//   }
-
-//   try {
-//     const res = await fetch("http://38.60.244.74:3000/admin/verify-owner-passcode", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ passcode }),
-//     });
-//     const data = await res.json();
-//     if (!data.success) {
-//       alert("Incorrect passcode!");
-//       return;
-//     }
-
-//     // Passcode verified, now save account
-//     await handleSaveAccount();
-//     setShowPasscodeModal(false);
-//   } catch (err) {
-//     console.error(err);
-//     alert("Passcode verification failed!");
-//   }
-// };
-
-
-
 //     if (Object.keys(newErrors).length > 0) return;
 
-//     // Prepare FormData
 //     const formData = new FormData();
 //     formData.append("name", newAccount.name);
 //     formData.append("email", newAccount.email);
@@ -85,10 +55,11 @@
 //     formData.append("gender", newAccount.gender);
 //     formData.append("photo", newAccount.photo || "");
 //     formData.append("phone", newAccount.phone);
-//     if (newAccount.role === "Manager") formData.append("passcode", newAccount.passcode);
+//     if (newAccount.role === "Manager")
+//       formData.append("passcode", newAccount.passcode);
 
 //     try {
-//       setLoading(true);
+//       setSaving(true);
 //       const res = await fetch("http://38.60.244.74:3000/admin", {
 //         method: "POST",
 //         body: formData,
@@ -114,36 +85,33 @@
 //       console.error(err);
 //       alert("❌ Something went wrong");
 //     } finally {
-//       setLoading(false);
+//       setSaving(false);
 //     }
 //   };
 
-//   // Inside your component
-// const handlePasscodeConfirm = async () => {
-//   if (!passcode.trim()) return alert("Enter passcode!");
+//   // Passcode confirm
+//   const handlePasscodeConfirm = async () => {
+//     if (!passcode.trim()) return alert("Enter passcode!");
 
-//   try {
-//     const res = await fetch(
-//       "http://38.60.244.74:3000/admin/verify-owner-passcode",
-//       {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify({ passcode: passcode.trim() }),
-//       }
-//     );
-//     const data = await res.json();
+//     try {
+//       const res = await fetch(
+//         "http://38.60.244.74:3000/admin/verify-owner-passcode",
+//         {
+//           method: "POST",
+//           headers: { "Content-Type": "application/json" },
+//           body: JSON.stringify({ passcode: passcode.trim() }),
+//         }
+//       );
+//       const data = await res.json();
 
-//     if (!data.success) return alert("Incorrect passcode!");
-
-//     // Passcode verified → now save the account
-//     await handleRegister(); // call your existing register function
-//     setShowPasscodeModal(false);
-//   } catch (err) {
-//     console.error(err);
-//     alert("Passcode verification failed!");
-//   }
-// };
-
+//       if (!data.success) return alert("Incorrect passcode!");
+//       await handleRegister();
+//       setShowPasscodeModal(false);
+//     } catch (err) {
+//       console.error(err);
+//       alert("Passcode verification failed!");
+//     }
+//   };
 
 //   return (
 //     <div>
@@ -151,20 +119,39 @@
 //         Register New Account
 //       </h3>
 
-//       {/* Photo Upload at top */}
-//       <div className="flex items-center gap-4 mb-6">
-//         <img
-//           src={
-//             newAccount.photo
-//               ? URL.createObjectURL(newAccount.photo)
-//               : "/default-avatar.png"
-//           }
-//           alt="Profile"
-//           className="w-20 h-20 rounded-full object-cover border border-neutral-700"
-//         />
-//         <label className="cursor-pointer text-sm text-amber-400 hover:text-amber-300 transition">
-//           Upload Photo
+//       {/* Photo Upload - Professional UI */}
+//       <div className="relative flex flex-col items-start justify-start mb-6">
+//         <div className="relative">
+//           <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-yellow-700 shadow-lg bg-gradient-to-br from-yellow-700 to-gray-900 flex items-center justify-center">
+//             {newAccount.photo ? (
+//               <img
+//                 src={URL.createObjectURL(newAccount.photo)}
+//                 alt="Profile"
+//                 className="w-full h-full object-cover"
+//               />
+//             ) : (
+//               <span className="text-amber-400 font-bold text-xl">
+//                 {newAccount.name
+//                   ? newAccount.name
+//                       .split(" ")
+//                       .map((n) => n[0])
+//                       .join("")
+//                       .toUpperCase()
+//                   : "P  "}
+//               </span>
+//             )}
+//           </div>
+
+//           {/* Camera icon always visible and clickable */}
+//           <label
+//             htmlFor="photo-upload"
+//             className="absolute bottom-0 right-0 flex items-center justify-center w-8 h-8 rounded-full bg-black/50 cursor-pointer hover:bg-black/70 transition shadow-md"
+//           >
+//             <Camera className="w-5 h-5 text-amber-400" />
+//           </label>
+
 //           <input
+//             id="photo-upload"
 //             type="file"
 //             accept="image/*"
 //             className="hidden"
@@ -173,7 +160,7 @@
 //               if (file) handleNewChange("photo", file);
 //             }}
 //           />
-//         </label>
+//         </div>
 //       </div>
 
 //       <div className="grid grid-cols-2 gap-6">
@@ -186,13 +173,17 @@
 //             value={newAccount.role}
 //             onChange={(e) => handleNewChange("role", e.target.value)}
 //             className={`w-full rounded-lg bg-neutral-800 border px-3 py-2 text-sm text-neutral-200 focus:outline-none ${
-//               errors.role ? "border-red-500" : "border-neutral-700 focus:border-amber-400"
+//               errors.role
+//                 ? "border-red-500"
+//                 : "border-neutral-700 focus:border-amber-400"
 //             }`}
 //           >
 //             <option value="Seller">Seller</option>
 //             <option value="Manager">Manager</option>
 //           </select>
-//           {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role}</p>}
+//           {errors.role && (
+//             <p className="text-red-500 text-xs mt-1">{errors.role}</p>
+//           )}
 //         </div>
 
 //         {/* Name */}
@@ -201,14 +192,19 @@
 //             Full Name <span className="text-red-500">*</span>
 //           </label>
 //           <input
+//             id="full-name-input" // 🟡 Added for auto focus
 //             type="text"
 //             value={newAccount.name}
 //             onChange={(e) => handleNewChange("name", e.target.value)}
 //             className={`w-full rounded-lg bg-neutral-800 border px-3 py-2 text-sm focus:outline-none ${
-//               errors.name ? "border-red-500" : "border-neutral-700 focus:border-amber-400"
+//               errors.name
+//                 ? "border-red-500"
+//                 : "border-neutral-700 focus:border-amber-400"
 //             }`}
 //           />
-//           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+//           {errors.name && (
+//             <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+//           )}
 //         </div>
 
 //         {/* Email */}
@@ -221,10 +217,14 @@
 //             value={newAccount.email}
 //             onChange={(e) => handleNewChange("email", e.target.value)}
 //             className={`w-full rounded-lg bg-neutral-800 border px-3 py-2 text-sm focus:outline-none ${
-//               errors.email ? "border-red-500" : "border-neutral-700 focus:border-amber-400"
+//               errors.email
+//                 ? "border-red-500"
+//                 : "border-neutral-700 focus:border-amber-400"
 //             }`}
 //           />
-//           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+//           {errors.email && (
+//             <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+//           )}
 //         </div>
 
 //         {/* Password */}
@@ -237,15 +237,21 @@
 //             value={newAccount.password}
 //             onChange={(e) => handleNewChange("password", e.target.value)}
 //             className={`w-full rounded-lg bg-neutral-800 border px-3 py-2 text-sm focus:outline-none ${
-//               errors.password ? "border-red-500" : "border-neutral-700 focus:border-amber-400"
+//               errors.password
+//                 ? "border-red-500"
+//                 : "border-neutral-700 focus:border-amber-400"
 //             }`}
 //           />
-//           {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+//           {errors.password && (
+//             <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+//           )}
 //         </div>
 
 //         {/* Phone */}
 //         <div>
-//           <label className="block text-sm mb-2 text-neutral-400">Phone Number</label>
+//           <label className="block text-sm mb-2 text-neutral-400">
+//             Phone Number
+//           </label>
 //           <input
 //             type="text"
 //             value={newAccount.phone}
@@ -276,7 +282,9 @@
 //         {/* Passcode for Manager */}
 //         {newAccount.role === "Manager" && (
 //           <div>
-//             <label className="block text-sm mb-2 text-neutral-400">Passcode</label>
+//             <label className="block text-sm mb-2 text-neutral-400">
+//               Passcode
+//             </label>
 //             <input
 //               type="password"
 //               value={newAccount.passcode}
@@ -286,87 +294,90 @@
 //           </div>
 //         )}
 
-//         {/* Submit Button */}
-//         <div className="col-span-2 flex flex-col gap-2 pt-4">
-// <button
-//   onClick={handlePasscodeConfirm}
-//   className="bg-yellow-500 text-black px-3 py-2 rounded-md text-sm"
-// >
-//   Confirm
-// </button>
-
-//           {successMessage && (
+//         {/* Buttons */}
+//         <div className="col-span-2 flex flex-col justify-between sm:flex-row gap-3 pt-4">
+//    <div>
+//                    {successMessage && (
 //             <p className="text-green-500 text-sm mt-1">{successMessage}</p>
 //           )}
-//         </div>
-
-// {showPasscodeModal && (
-//   <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-//     <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 relative">
-//       <button
-//         onClick={() => setShowPasscodeModal(false)}
-//         className="absolute top-2 right-2 text-neutral-400 hover:text-white"
-//       >
-//         <X size={18} />
-//       </button>
-
-//       <h3 className="text-lg font-semibold mb-4 text-center">
-//         Enter Owner Passcode
-//       </h3>
-
-//       <input
-//         type="password"
-//         value={passcode}
-//         onChange={(e) => setPasscode(e.target.value)}
-//         placeholder="Enter passcode"
-//         className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
-//       />
-
-//       <div className="flex justify-between">
-//         <button
-//           onClick={() => setShowPasscodeModal(false)}
-//           className="bg-neutral-700 text-white px-3 py-2 rounded-md text-sm"
-//         >
-//           Cancel
-//         </button>
-//         <button
-//           onClick={async () => {
-//             try {
-//               const res = await fetch(
-//                 "http://38.60.244.74:3000/admin/verify-owner-passcode",
-//                 {
-//                   method: "POST",
-//                   headers: { "Content-Type": "application/json" },
-//                   body: JSON.stringify({ passcode }),
-//                 }
-//               );
-//               const data = await res.json();
-//               if (!data.success) return alert("Incorrect passcode!");
-              
-//               // Passcode correct → now save account
-//               handleSaveAccount(); 
-//               setShowPasscodeModal(false);
-//             } catch (err) {
-//               console.error(err);
-//               alert("Passcode verification failed!");
+//    </div>
+//     <div className="flex gap-3">
+      
+//           <button
+//             onClick={() =>
+//               setNewAccount({
+//                 role: "Seller",
+//                 name: "",
+//                 password: "",
+//                 email: "",
+//                 phone: "",
+//                 gender: "Female",
+//                 photo: null,
+//                 passcode: "",
+//               })
 //             }
-//           }}
-//           className="bg-yellow-500 text-black px-3 py-2 rounded-md text-sm"
-//         >
-//           Confirm
-//         </button>
-//       </div>
+//             className="rounded-lg border border-neutral-700 bg-neutral-800 text-neutral-300 px-5 py-2 hover:bg-neutral-700 transition-colors text-sm w-full sm:w-auto"
+//           >
+//             Cancel
+//           </button>
+//                 <button
+//             onClick={() => setShowPasscodeModal(true)}
+//             disabled={saving}
+//             className="rounded-lg bg-amber-400 text-black px-5 py-2 hover:bg-amber-500 transition-colors font-medium text-sm w-full sm:w-auto"
+//           >
+//             {saving ? "Saving..." : "Register"}
+//           </button>
 //     </div>
-//   </div>
-// )}
-        
+  
+//         </div>
 //       </div>
+
+//       {/* Passcode Modal (unchanged) */}
+//       {showPasscodeModal && (
+//         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+//           <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 relative">
+//             <button
+//               onClick={() => setShowPasscodeModal(false)}
+//               className="absolute top-2 right-2 text-neutral-400 hover:text-white"
+//             >
+//               <X size={18} />
+//             </button>
+
+//             <h3 className="text-lg font-semibold mb-4 text-center">
+//               Enter Owner Passcode
+//             </h3>
+
+//             <input
+//               type="password"
+//               value={passcode}
+//               onChange={(e) => setPasscode(e.target.value)}
+//               placeholder="Enter passcode"
+//               className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
+//             />
+
+//             <div className="flex justify-between">
+//               <button
+//                 onClick={() => setShowPasscodeModal(false)}
+//                 className="bg-neutral-700 text-white px-3 py-2 rounded-md text-sm"
+//               >
+//                 Cancel
+//               </button>
+//               <button
+//                 onClick={handlePasscodeConfirm}
+//                 className="bg-yellow-500 text-black px-3 py-2 rounded-md text-sm"
+//               >
+//                 Confirm
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
 //     </div>
 //   );
 // }
 
-import { X } from "lucide-react";
-import React, { useState } from "react";
+import { X, Camera, Eye, EyeOff } from "lucide-react";
+import React, { useState, useEffect } from "react";
 
 export default function CreateAccount() {
   const [newAccount, setNewAccount] = useState({
@@ -385,8 +396,17 @@ export default function CreateAccount() {
   const [loading, setLoading] = useState(false);
 
   const [showPasscodeModal, setShowPasscodeModal] = useState(false);
-  const [passcode, setPasscode] = useState(""); // owner passcode modal
+  const [passcode, setPasscode] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // Eye toggle for password
+  const [showPassword, setShowPassword] = useState(false);
+
+  // 🟡 Auto focus Full Name input
+  useEffect(() => {
+    const nameInput = document.getElementById("full-name-input");
+    if (nameInput) nameInput.focus();
+  }, []);
 
   // Handle field changes
   const handleNewChange = (field, value) => {
@@ -396,7 +416,6 @@ export default function CreateAccount() {
 
   // Save account function
   const handleRegister = async () => {
-    // Validation
     const newErrors = {};
     if (!newAccount.name.trim()) newErrors.name = "Name is required";
     if (!newAccount.email.trim()) newErrors.email = "Email is required";
@@ -408,7 +427,15 @@ export default function CreateAccount() {
 
     if (Object.keys(newErrors).length > 0) return;
 
-    // Prepare FormData
+    // Strong password validation
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    if (!strongPasswordRegex.test(newAccount.password)) {
+      alert(
+        "❌ Password is not strong enough! Must be min 8 chars, include uppercase, lowercase, number, and special character."
+      );
+      return;
+    }
+
     const formData = new FormData();
     formData.append("name", newAccount.name);
     formData.append("email", newAccount.email);
@@ -417,7 +444,13 @@ export default function CreateAccount() {
     formData.append("gender", newAccount.gender);
     formData.append("photo", newAccount.photo || "");
     formData.append("phone", newAccount.phone);
-    if (newAccount.role === "Manager") formData.append("passcode", newAccount.passcode);
+    if (newAccount.role === "Manager") {
+      if (!newAccount.passcode.trim()) {
+        alert("❌ Manager must provide passcode!");
+        return;
+      }
+      formData.append("passcode", newAccount.passcode);
+    }
 
     try {
       setSaving(true);
@@ -427,7 +460,7 @@ export default function CreateAccount() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setSuccessMessage("✅ Account registered successfully!");
+        alert(`✅ ${data.message || "Account registered successfully!"}`);
         setNewAccount({
           role: "Seller",
           name: "",
@@ -450,7 +483,7 @@ export default function CreateAccount() {
     }
   };
 
-  // Handle passcode verification and save
+  // Passcode confirm
   const handlePasscodeConfirm = async () => {
     if (!passcode.trim()) return alert("Enter passcode!");
 
@@ -465,37 +498,53 @@ export default function CreateAccount() {
       );
       const data = await res.json();
 
-      if (!data.success) return alert("Incorrect passcode!");
-
-      // Passcode correct → now save account
+      if (!data.success) return alert(`❌ ${data.message || "Incorrect passcode!"}`);
       await handleRegister();
       setShowPasscodeModal(false);
     } catch (err) {
       console.error(err);
-      alert("Passcode verification failed!");
+      alert("❌ Passcode verification failed!");
     }
   };
 
   return (
     <div>
-      <h3 className="font-bold text-2xl mb-6 text-amber-400">
+      <h3 className="font-bold text-xl mb-6 text-amber-400">
         Register New Account
       </h3>
 
       {/* Photo Upload */}
-      <div className="flex items-center gap-4 mb-6">
-        <img
-          src={
-            newAccount.photo
-              ? URL.createObjectURL(newAccount.photo)
-              : "/default-avatar.png"
-          }
-          alt="Profile"
-          className="w-20 h-20 rounded-full object-cover border border-neutral-700"
-        />
-        <label className="cursor-pointer text-sm text-amber-400 hover:text-amber-300 transition">
-          Upload Photo
+      <div className="relative flex flex-col items-start justify-start mb-6">
+        <div className="relative">
+          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-yellow-700 shadow-lg bg-gradient-to-br from-yellow-700 to-gray-900 flex items-center justify-center">
+            {newAccount.photo ? (
+              <img
+                src={URL.createObjectURL(newAccount.photo)}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-amber-400 font-bold text-xl">
+                {newAccount.name
+                  ? newAccount.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                  : "P  "}
+              </span>
+            )}
+          </div>
+
+          <label
+            htmlFor="photo-upload"
+            className="absolute bottom-0 right-0 flex items-center justify-center w-8 h-8 rounded-full bg-black/50 cursor-pointer hover:bg-black/70 transition shadow-md"
+          >
+            <Camera className="w-5 h-5 text-amber-400" />
+          </label>
+
           <input
+            id="photo-upload"
             type="file"
             accept="image/*"
             className="hidden"
@@ -504,7 +553,7 @@ export default function CreateAccount() {
               if (file) handleNewChange("photo", file);
             }}
           />
-        </label>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-6">
@@ -536,6 +585,7 @@ export default function CreateAccount() {
             Full Name <span className="text-red-500">*</span>
           </label>
           <input
+            id="full-name-input"
             type="text"
             value={newAccount.name}
             onChange={(e) => handleNewChange("name", e.target.value)}
@@ -570,24 +620,32 @@ export default function CreateAccount() {
           )}
         </div>
 
-        {/* Password */}
+        {/* Password with eye toggle */}
         <div>
           <label className="block text-sm mb-2 text-neutral-400">
             Password <span className="text-red-500">*</span>
           </label>
-          <input
-            type="password"
-            value={newAccount.password}
-            onChange={(e) => handleNewChange("password", e.target.value)}
-            className={`w-full rounded-lg bg-neutral-800 border px-3 py-2 text-sm focus:outline-none ${
-              errors.password
-                ? "border-red-500"
-                : "border-neutral-700 focus:border-amber-400"
-            }`}
-          />
-          {errors.password && (
-            <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-          )}
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={newAccount.password}
+              onChange={(e) => handleNewChange("password", e.target.value)}
+              className={`w-full rounded-lg bg-neutral-800 border px-3 py-2 text-sm focus:outline-none ${
+                errors.password
+                  ? "border-red-500"
+                  : "border-neutral-700 focus:border-amber-400"
+              }`}
+            />
+            <span
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-neutral-400"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+            </span>
+          </div>
+          {/* <small className="text-neutral-500 text-xs">
+            Strong password: min 8 chars, uppercase, lowercase, number, special
+          </small> */}
         </div>
 
         {/* Phone */}
@@ -625,7 +683,9 @@ export default function CreateAccount() {
         {/* Passcode for Manager */}
         {newAccount.role === "Manager" && (
           <div>
-            <label className="block text-sm mb-2 text-neutral-400">Passcode</label>
+            <label className="block text-sm mb-2 text-neutral-400">
+              Passcode
+            </label>
             <input
               type="password"
               value={newAccount.passcode}
@@ -635,22 +695,43 @@ export default function CreateAccount() {
           </div>
         )}
 
-        {/* Submit Button */}
-        <div className="col-span-2 flex flex-col gap-2 pt-4">
-          <button
-            onClick={() => setShowPasscodeModal(true)} // open passcode modal first
-            disabled={saving}
-            className="rounded-lg bg-amber-400 text-black px-5 py-2 hover:bg-amber-500 transition-colors font-medium text-sm"
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-          {successMessage && (
-            <p className="text-green-500 text-sm mt-1">{successMessage}</p>
-          )}
+        {/* Buttons */}
+        <div className="col-span-2 flex flex-col justify-between sm:flex-row gap-3 ">
+          <div>
+            {successMessage && (
+              <p className="text-green-500 text-sm mt-1">{successMessage}</p>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() =>
+                setNewAccount({
+                  role: "Seller",
+                  name: "",
+                  password: "",
+                  email: "",
+                  phone: "",
+                  gender: "Female",
+                  photo: null,
+                  passcode: "",
+                })
+              }
+              className="rounded-lg border border-neutral-700 bg-neutral-800 text-neutral-300 px-5 py-2 hover:bg-neutral-700 transition-colors text-sm w-full sm:w-auto"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => setShowPasscodeModal(true)}
+              disabled={saving}
+              className="rounded-lg bg-amber-400 text-black px-5 py-2 hover:bg-amber-500 transition-colors font-medium text-sm w-full sm:w-auto"
+            >
+              {saving ? "Saving..." : "Register"}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Passcode Modal */}
+      {/* Passcode Modal (unchanged) */}
       {showPasscodeModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 relative">
@@ -693,4 +774,3 @@ export default function CreateAccount() {
     </div>
   );
 }
-

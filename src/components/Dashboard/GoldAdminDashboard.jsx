@@ -4,7 +4,6 @@ import GoldPriceTrend from "./GoldPriceTrend";
 import BuyVsSell from "./BuyVsSell";
 import RevenueTrend from "./RevenueTrend";
 import TopWallets from "./TopWallets";
-import ActivityFeed from "./ActivityFeed";
 import RecentTransactionsTable from "./RecentTransactionsTable";
 
 // Sample feed and top wallets (can keep as props or fetch later)
@@ -49,21 +48,22 @@ export default function GoldAdminRightPane() {
         </section>
 
         {/* Revenue trend */}
-        <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-          <RevenueTrend />
+        <section className="grid grid-cols-6 h-full gap-4">
+          <section className="col-span-4 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 ">
+            <RevenueTrend />
+          </section>
+          <div className="col-span-2 h-full">
+            <TopWallets wallets={TOP_WALLETS} />
+          </div>
         </section>
 
         {/* Transactions table */}
         <section className="m-4">
           <RecentTransactionsTable />
-
         </section>
 
         {/* Feed and top wallets */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <ActivityFeed feed={FEED} />
-          <TopWallets wallets={TOP_WALLETS} />
-        </section>
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-4"></section>
       </main>
     </div>
   );

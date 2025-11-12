@@ -23,7 +23,7 @@ export default function OverviewTab() {
 
   return (
     <div className="">
-      <h3 className="font-bold text-text-xl mb-6 text-amber-400">Personal Information</h3>
+      <h3 className="font-bold text-2xl mb-6 text-amber-400">Personal Information</h3>
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>

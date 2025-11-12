@@ -139,10 +139,15 @@ export default function GoldConversion() {
       </div>
 
       {goldList.length > 0 && showTable && (
-        <div
-          className="overflow-y-auto mt-2 border border-neutral-800 rounded-lg"
-          style={{ maxHeight: "8rem" }}
-        >
+     <div
+  className="overflow-y-auto mt-2 border border-neutral-800 rounded-lg scrollbar-thin scrollbar-thumb-yellow-500 scrollbar-track-neutral-900 hover:scrollbar-thumb-yellow-400 transition-all duration-200"
+  style={{
+    maxHeight: "8rem",
+    scrollbarWidth: "thin",
+    scrollbarColor: "#eab308 #171717", // (yellow-500 thumb, dark track)
+  }}
+>
+
           <table className="w-full text-sm border-collapse">
             <thead className="sticky top-0 bg-neutral-900 z-10">
               <tr className="border-b border-neutral-700">
@@ -169,44 +174,52 @@ export default function GoldConversion() {
       )}
 
       {/* Password Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 relative">
-            <button
-              onClick={cancelUpdate}
-              className="absolute top-2 right-2 text-neutral-400 hover:text-white"
-            >
-              <X size={18} />
-            </button>
+ {showModal && (
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 relative">
+      <button
+        onClick={cancelUpdate}
+        className="absolute top-2 right-2 text-neutral-400 hover:text-white"
+      >
+        <X size={18} />
+      </button>
 
-            <h3 className="text-lg font-semibold mb-4 text-center">
-              Enter Passcode to Update
-            </h3>
+      <h3 className="text-lg font-semibold mb-4 text-center">
+        Enter Passcode to Update
+      </h3>
 
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
-            />
-            <div className="flex justify-between">
-              <button
-                onClick={cancelUpdate}
-                className="bg-neutral-700 text-white px-3 py-2 rounded-md text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePasswordSubmit}
-                className="bg-yellow-500 text-black px-3 py-2 rounded-md text-sm"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Enter passcode"
+        className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            handlePasswordSubmit();
+          }
+        }}
+        autoFocus
+      />
+
+      <div className="flex justify-between">
+        <button
+          onClick={cancelUpdate}
+          className="bg-neutral-700 text-white px-3 py-2 rounded-md text-sm"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handlePasswordSubmit}
+          className="bg-yellow-500 text-black px-3 py-2 rounded-md text-sm"
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </section>
   );
 }

@@ -51,7 +51,7 @@ export default function SummaryCards() {
       {/* Buy Price Card */}
       <SummaryCard
         title="Buy Price"
-        value={`${summary.buyingPrices.price.toLocaleString()} Ks`}
+        value={`${summary.buyingPrices.price.toLocaleString()} ကျပ်`}
         sub={
           <>
             <span
@@ -74,7 +74,7 @@ export default function SummaryCards() {
       {/* Sell Price Card */}
       <SummaryCard
         title="Sell Price"
-        value={`${summary.sellingPrices.price.toLocaleString()} Ks`}
+        value={`${summary.sellingPrices.price.toLocaleString()} ကျပ်`}
         sub={
           <>
             <span
@@ -135,7 +135,7 @@ function SummaryCard({ title, value, sub, icon, accent, subClass }) {
       className={`rounded-2xl border border-neutral-800 bg-neutral-900 p-4 relative overflow-hidden`}
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${accent}`} />
-      <div className="relative z-10">
+      <div className="relative">
         <div className="flex items-center justify-between mb-2 text-sm text-neutral-400">
           <span>{title}</span>
           {icon}

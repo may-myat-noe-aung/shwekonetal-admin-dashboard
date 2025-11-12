@@ -62,20 +62,29 @@ export default function GoldPriceTrend() {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-            <XAxis dataKey="time" stroke="#a3a3a3" interval="preserveStartEnd" />
-            <YAxis stroke="#a3a3a3" width={100}/>
+            <XAxis
+              dataKey="time"
+              stroke="#a3a3a3"
+              interval="preserveStartEnd"
+            />
+            <YAxis stroke="#a3a3a3" width={100} />
             <Tooltip
               contentStyle={{
                 background: "#0a0a0a",
                 border: "1px solid #262626",
               }}
+              formatter={(value, name) => [
+                `${value?.toLocaleString()} ကျပ်`,
+                "Price",
+              ]}
             />
+
             <Area
               type="monotone"
               dataKey="price"
               stroke="#f59e0b"
               fill="url(#gold)"
-              connectNulls={false}  
+              connectNulls={false}
             />
           </AreaChart>
         </ResponsiveContainer>

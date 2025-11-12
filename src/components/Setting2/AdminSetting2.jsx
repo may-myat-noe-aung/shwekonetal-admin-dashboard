@@ -1,15 +1,16 @@
 
+
 import React, { useState, useEffect } from "react";
 import { X, Bell, ShieldCheck, User, SunMoon, Download, Shield } from "lucide-react";
-import CreateAccount from "./CreateAccount"; 
-import SecurityTab from "./SecurityTab";
 import OverviewTab from "./OverviewTab";
-import EditAccountTab from "./EditAccountTab";
-import ManagerSellerList from "./ManagerSellerList";
+import CreateAccount from "../Setting/CreateAccount";
+import SecurityTab from "../Setting/SecurityTab";
+import EditAccountTab from "../Setting/EditAccountTab";
+import ManagerSellerList from "../Setting/ManagerSellerList";
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState("overview");
-  const [account, setAccount] = useState(null);
+  const [account, setAccount] = useState(null); // fetched admin data
   const [security, setSecurity] = useState({
     email: "",
     passcode: "",
@@ -19,18 +20,22 @@ export default function AdminSettings() {
 
   const [quickActions] = useState([
     { icon: <Download className="h-4 w-4" />, label: "Export Data" },
-    { icon: <Shield className="h-4 w-4" />, label: "Security", action:"security" },
+    { icon: <Shield className="h-4 w-4" />, label: "Change Passcode" },
     { icon: <User className="h-4 w-4" />, label: "Register New Account", action: "create" },
   ]);
 
   const adminId = localStorage.getItem("adminId");
 
+  // ---------------- Fetch Admin Data ----------------
   useEffect(() => {
     if (!adminId) return;
+
     fetch(`http://38.60.244.74:3000/admin/${adminId}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.data.length > 0) setAccount(data.data[0]);
+        if (data.success && data.data.length > 0) {
+          setAccount(data.data[0]);
+        }
       })
       .catch((err) => console.error("Failed to fetch admin data:", err));
   }, [adminId]);
@@ -40,8 +45,11 @@ export default function AdminSettings() {
   };
 
   const handleVerifyPasscode = () => {
-    if (security.passcode === "123456") setSecurity((prev) => ({ ...prev, isVerified: true }));
-    else alert("Invalid passcode ❌");
+    if (security.passcode === "123456") {
+      setSecurity((prev) => ({ ...prev, isVerified: true }));
+    } else {
+      alert("Invalid passcode ❌");
+    }
   };
 
   const handleCancelSecurity = () => {
@@ -70,8 +78,9 @@ export default function AdminSettings() {
     { key: "managerSellerList", label: "Manager & Seller List", icon: <User className="h-4 w-4" /> },
   ];
 
+  // ---------------- Main Return ----------------
   return (
-    <div className="bg-neutral-950 text-neutral-100 p-4  md:h-[8.5vh] xl:h-[90vh] mx-auto max-w-6xl overflow-hidden">
+    <div className="bg-neutral-950 text-neutral-100 p-6 h-[85.5vh] mx-auto max-w-7xl">
       {/* Horizontal Tabs */}
       <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-4 mb-6">
         <div className="flex space-x-2 overflow-x-auto">
@@ -79,7 +88,7 @@ export default function AdminSettings() {
             <button
               key={item.key}
               onClick={() => setActiveTab(item.key)}
-              className={`flex items-center gap-2 px-4 py-2 md:px-6 md:py-2 rounded-xl text-sm md:text-sm font-medium transition-colors whitespace-nowrap ${
+              className={`flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === item.key
                   ? "bg-amber-400 text-black"
                   : "text-neutral-300 hover:bg-amber-500/20 hover:text-amber-300"
@@ -93,7 +102,7 @@ export default function AdminSettings() {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-4 gap-6">
         {/* Left Column - Profile + Quick Actions */}
         <div className="col-span-1 space-y-6">
           {/* Profile Card */}
@@ -141,8 +150,7 @@ export default function AdminSettings() {
         </div>
 
         {/* Right Column - Tabs */}
-      <div className="col-span-1 md:col-span-3 bg-neutral-900 rounded-2xl border border-neutral-800 p-6">
-
+        <div className="col-span-3 bg-neutral-900 rounded-2xl border border-neutral-800 p-8 overflow-x-auto">
           {activeTab === "overview" && <OverviewTab account={account} />}
           {activeTab === "edit" && <EditAccountTab account={account} setAccount={setAccount} />}
           {activeTab === "security" && (

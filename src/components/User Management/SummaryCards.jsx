@@ -3,7 +3,6 @@ import React from "react";
 import { Users, ArrowUpRight, Filter, UserPlus } from "lucide-react";
 
 const SummaryCard = ({ title, value, icon, accent }) => (
-  
   <div className="relative overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
     <div
       className={
@@ -23,7 +22,7 @@ const SummaryCard = ({ title, value, icon, accent }) => (
   </div>
 );
 
-export default function SummaryCards({ total, approved, rejected, newUsers }) {
+export default function SummaryCards({ total, approved, rejected, pending }) {
   return (
     <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <SummaryCard
@@ -45,8 +44,8 @@ export default function SummaryCards({ total, approved, rejected, newUsers }) {
         accent="from-rose-500/20 to-transparent"
       />
       <SummaryCard
-        title="New Users"
-        value={newUsers}
+        title="Pending Users"
+        value={pending}
         icon={<UserPlus className="h-5 w-5" />}
         accent="from-indigo-500/20 to-transparent"
       />

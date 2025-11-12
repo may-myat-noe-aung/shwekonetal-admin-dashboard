@@ -378,37 +378,47 @@ export default function ServerToggle() {
 
   return (
     <div className="flex flex-col items-start gap-3 relative">
-      <div className="flex items-center gap-3">
-        <span className="font-semibold text-sm text-neutral-300">
-          Server Status:
-        </span>
+<div className="text-center">
+  <div className="font-semibold text-lg text-neutral-300 mb-2">
+    Server Status
+  </div>
 
-        {loading ? (
-          <span className="text-neutral-400 text-sm">Loading...</span>
-        ) : (
-          <>
-            <button
-              onClick={handleClick}
-              className={`relative inline-flex h-8 w-16 items-center rounded-full transition-colors duration-300 focus:outline-none ${
-                isOpen ? "bg-green-500" : "bg-red-500"
-              }`}
-            >
-              <span
-                className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
-                  isOpen ? "translate-x-8" : "translate-x-1"
-                }`}
-              />
-            </button>
-            <span
-              className={`font-semibold text-sm ${
-                isOpen ? "text-green-400" : "text-red-400"
-              }`}
-            >
-              {isOpen ? "Open" : "Closed"}
-            </span>
-          </>
-        )}
+  {loading ? (
+    <span className="text-neutral-400 text-sm">Loading...</span>
+  ) : (
+    <>
+      <div className="relative">
+        <select
+          value={isOpen ? "open" : "closed"}
+          onChange={handleClick} // opens passcode modal
+          className={`appearance-none w-32 py-2 pl-3 pr-8 rounded-lg text-sm font-semibold bg-neutral-800 border border-neutral-700 text-white cursor-pointer transition-colors duration-300 ${
+            isOpen ? "border-green-500" : "border-red-500"
+          } hover:border-yellow-500`}
+        >
+          <option value="open" className="text-green-400">
+            Open
+          </option>
+          <option value="closed" className="text-red-400">
+            Closed
+          </option>
+        </select>
+        {/* Dropdown arrow */}
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+          <svg
+            className="h-4 w-4 text-neutral-400"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </div>
+    </>
+  )}
+</div>
+
 
       {/* ✅ Passcode + Countdown Modal */}
       {showModal && (

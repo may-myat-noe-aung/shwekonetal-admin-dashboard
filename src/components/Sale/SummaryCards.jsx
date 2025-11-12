@@ -33,7 +33,7 @@ const SummaryCards = ({ sales, goldTotal, totalPrice, totalApproved }) => (
     />
     <SummaryCard
       title="Total Sale Amount"
-      value={`${totalPrice.toLocaleString()} Ks`}
+      value={`${totalPrice.toLocaleString()} ကျပ်`}
       sub="Gross sales"
       icon={<Wallet size={20} />}
       accent="from-green-600/10 to-green-400/5"

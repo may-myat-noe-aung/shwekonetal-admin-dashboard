@@ -5,7 +5,10 @@ import { useNavigate } from "react-router-dom";
 export default function RecentTransactions() {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sortConfig, setSortConfig] = useState({ key: "date", direction: "desc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "date",
+    direction: "desc",
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const rowsPerPage = 10;
@@ -72,36 +75,17 @@ export default function RecentTransactions() {
 
   // 🔹 Pagination
   const totalPages = Math.ceil(sortedSales.length / rowsPerPage);
-  const paginatedSales = sortedSales.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const paginatedSales = sortedSales.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
 
   // 🔹 Sort click handler
   const requestSort = (key) => {
     let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") direction = "desc";
+    if (sortConfig.key === key && sortConfig.direction === "asc")
+      direction = "desc";
     setSortConfig({ key, direction });
-  };
-
-  // 🔹 CSV Export
-  const exportCSV = () => {
-    const headers = ["ID", "User ID", "Customer", "Type", "Gold", "Price", "Date", "Seller", "Manager", "Status"];
-    const rows = sales.map((s) => [
-      s.id,
-      s.userid,
-      s.fullname,
-      s.type,
-      s.gold,
-      s.price,
-      new Date(s.date).toLocaleDateString(),
-      s.seller || "-",
-      s.manager || "-",
-      s.status,
-    ]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "approved_sales.csv";
-    link.click();
   };
 
   if (loading) {
@@ -116,7 +100,10 @@ export default function RecentTransactions() {
     <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 overflow-x-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-xl font-semibold"> Approved Transactions (Today) </h3>
+        <h3 className="text-xl font-semibold">
+          {" "}
+          Approved Transactions (Today){" "}
+        </h3>
         <div className="flex gap-2">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-neutral-400" />
@@ -128,10 +115,7 @@ export default function RecentTransactions() {
               type="text"
             />
           </div>
-          <button
-            onClick={exportCSV}
-            className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
-          >
+          <button className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white">
             <Download size={14} /> Export
           </button>
         </div>
@@ -174,60 +158,65 @@ export default function RecentTransactions() {
           </tr>
         </thead>
 
-     <tbody>
-  {paginatedSales.length === 0 ? (
-    <tr className="h-[200px]">
-      <td colSpan={9} className="text-center py-10 text-neutral-500">
-        No approved transactions found.
-      </td>
-    </tr>
-  ) : (
-    paginatedSales.map((s) => (
-      <tr key={s.id} className="border-b border-neutral-800 hover:bg-neutral-800/50">
-        <td className="py-2 px-3 text-center">{s.userid}</td>
-        <td className="py-2 px-3 text-center">{s.fullname}</td>
-        <td
-          className={`py-2 px-3 text-center capitalize font-semibold ${
-            s.type === "buy"
-              ? "text-green-400"
-              : s.type === "sell"
-              ? "text-red-400"
-              : s.type === "delivery"
-              ? "text-orange-400"
-              : "text-neutral-300"
-          }`}
-        >
-          {s.type}
-        </td>
+        <tbody>
+          {paginatedSales.length === 0 ? (
+            <tr className="h-[200px]">
+              <td colSpan={9} className="text-center py-10 text-neutral-500">
+                No approved transactions found.
+              </td>
+            </tr>
+          ) : (
+            paginatedSales.map((s) => (
+              <tr
+                key={s.id}
+                className="border-b border-neutral-800 hover:bg-neutral-800/50"
+              >
+                <td className="py-2 px-3 text-center">{s.userid}</td>
+                <td className="py-2 px-3 text-center">{s.fullname}</td>
+                <td
+                  className={`py-2 px-3 text-center capitalize font-semibold ${
+                    s.type === "buy"
+                      ? "text-green-400"
+                      : s.type === "sell"
+                      ? "text-red-400"
+                      : s.type === "delivery"
+                      ? "text-orange-400"
+                      : "text-neutral-300"
+                  }`}
+                >
+                  {s.type}
+                </td>
 
-        <td className="py-2 px-3 text-center">{s.gold}</td>
+                <td className="py-2 px-3 text-center">{s.gold}</td>
 
-        {/* 🔹 Show dash for delivery type */}
-        <td className="py-2 px-3 text-center">
-          {s.type === "delivery" ? "-" : `${s.price?.toLocaleString()} ကျပ်`}
-        </td>
+                {/* 🔹 Show dash for delivery type */}
+                <td className="py-2 px-3 text-center">
+                  {s.type === "delivery"
+                    ? "-"
+                    : `${s.price?.toLocaleString()} ကျပ်`}
+                </td>
 
-        <td className="py-2 px-3 text-center">
-          {s.date ? new Date(s.date).toLocaleDateString() : "-"}
-        </td>
-        <td className="py-2 px-3 text-center">{s.seller || "-"}</td>
-        <td className="py-2 px-3 text-center">{s.manager || "-"}</td>
-        <td
-          className={`py-2 px-3 text-center capitalize font-semibold ${
-            s.status === "approved"
-              ? "text-emerald-400"
-              : s.status === "pending"
-              ? "text-yellow-400"
-              : "text-rose-400"
-          }`}
-        >
-          {s.status}
-        </td>
-      </tr>
-    ))
-  )}
-</tbody>
+                <td className="py-2 px-3 text-center">
+                  {s.created_at ? s.created_at.split(" ")[0] : "-"}
+                </td>
 
+                <td className="py-2 px-3 text-center">{s.seller || "-"}</td>
+                <td className="py-2 px-3 text-center">{s.manager || "-"}</td>
+                <td
+                  className={`py-2 px-3 text-center capitalize font-semibold ${
+                    s.status === "approved"
+                      ? "text-emerald-400"
+                      : s.status === "pending"
+                      ? "text-yellow-400"
+                      : "text-rose-400"
+                  }`}
+                >
+                  {s.status}
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
       </table>
 
       {/* Pagination */}

@@ -94,7 +94,7 @@ const RecentTransactions = ({ sales, updateStatus }) => {
   };
 
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 overflow-x-auto">
+    <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 overflow-x-hidden">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xl font-semibold">Recent Transactions</h3>
         <div className="flex gap-2">

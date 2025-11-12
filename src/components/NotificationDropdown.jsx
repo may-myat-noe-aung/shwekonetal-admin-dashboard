@@ -1,16 +1,29 @@
-// NotificationDropdown.jsx
 import React, { useState, useRef, useEffect } from "react";
-import { Bell, ShoppingCart, DollarSign, Truck, UserPlus, TrendingUp } from "lucide-react";
+import {
+  Bell,
+  ShoppingCart,
+  DollarSign,
+  Truck,
+  UserPlus,
+  TrendingUp,
+  CheckCircle,
+} from "lucide-react";
 
 export default function NotificationDropdown({ notifications = [] }) {
   const [open, setOpen] = useState(false);
-  const [localNoti, setLocalNoti] = useState(notifications || []);
+  const [localNoti, setLocalNoti] = useState([]);
   const notiRef = useRef();
 
-  // Sync local state when props change
+  // Load props or localStorage data
   useEffect(() => {
-    setLocalNoti(Array.isArray(notifications) ? notifications : []);
+    const saved = JSON.parse(localStorage.getItem("notifications")) || notifications;
+    setLocalNoti(saved);
   }, [notifications]);
+
+  // Save whenever localNoti changes
+  useEffect(() => {
+    localStorage.setItem("notifications", JSON.stringify(localNoti));
+  }, [localNoti]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -21,18 +34,26 @@ export default function NotificationDropdown({ notifications = [] }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Mark all notifications as read
+  // ✅ Clear all notifications instead of marking as read
   const markAllRead = () => {
-    setLocalNoti(localNoti.map((n) => ({ ...n, read: true })));
+    setLocalNoti([]);
+    localStorage.removeItem("notifications");
   };
 
-  // Type-based colors and icons
+  // ✅ Type configuration with icons & colors
   const typeConfig = {
     buy: { bg: "bg-green-900", icon: <ShoppingCart size={16} className="text-green-400" /> },
     sell: { bg: "bg-red-900", icon: <DollarSign size={16} className="text-red-400" /> },
     delivery: { bg: "bg-orange-900", icon: <Truck size={16} className="text-orange-400" /> },
     "new-user": { bg: "bg-yellow-900", icon: <UserPlus size={16} className="text-yellow-400" /> },
-    "gold-change": { bg: "bg-blue-900", icon: <TrendingUp size={16} className="text-blue-400" /> },
+    buying: { bg: "bg-blue-900", icon: <TrendingUp size={16} className="text-blue-400" /> },
+    selling: { bg: "bg-indigo-900", icon: <TrendingUp size={16} className="text-indigo-400" /> },
+    formula: { bg: "bg-teal-900", icon: <TrendingUp size={16} className="text-teal-400" /> },
+
+    // ✅ Newly added "approved" APIs
+    "buy-table": { bg: "bg-green-800/80", icon: <CheckCircle size={16} className="text-green-300" /> },
+    "sell-table": { bg: "bg-red-800/80", icon: <CheckCircle size={16} className="text-red-300" /> },
+    "delivery-table": { bg: "bg-orange-800/80", icon: <CheckCircle size={16} className="text-orange-300" /> },
   };
 
   return (
@@ -49,36 +70,50 @@ export default function NotificationDropdown({ notifications = [] }) {
 
       {open && (
         <div className="absolute right-0 mt-2 w-80 max-h-96 overflow-y-auto rounded-xl bg-neutral-900 border border-neutral-800 shadow-lg z-50">
-          <div className="p-4 border-b border-neutral-800 font-semibold">Notifications</div>
+          <div className="p-4 border-b border-neutral-800 font-semibold flex justify-between items-center">
+            <span>Notifications</span>
+            {localNoti.length > 0 && (
+              <button onClick={markAllRead} className="text-yellow-400 text-sm hover:text-yellow-300">
+                Clear all
+              </button>
+            )}
+          </div>
 
           {localNoti.length === 0 && (
             <div className="p-4 text-center text-neutral-400">No notifications</div>
           )}
 
-          <ul>
-            {localNoti.map((noti) => {
-              const config = typeConfig[noti.type] || { bg: "bg-neutral-950/50", icon: <Bell size={16} className="text-neutral-400" /> };
-              return (
-                <li
-                  key={noti.id}
-                  className={`px-4 py-3 border-b border-neutral-800 cursor-pointer flex items-center gap-3 rounded-lg hover:bg-neutral-800 ${config.bg} ${noti.read ? "opacity-50" : "opacity-100"}`}
-                >
-                  <div>{config.icon}</div>
-                  <div className="flex-1">
-                    <div className="text-sm text-neutral-100">{noti.message}</div>
-                    <div className="text-xs text-neutral-400">{noti.time}</div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+      <div
+  className="overflow-y-auto max-h-72" // scrollable
+  style={{
+    scrollbarWidth: "thin",
+    scrollbarColor: "#eab308 #171717",
+  }}
+>
+  <ul>
+    {localNoti.map((noti, i) => {
+      const config =
+        typeConfig[noti.type] || {
+          bg: "bg-neutral-950/50",
+          icon: <Bell size={16} className="text-neutral-400" />,
+        };
+      return (
+        <li
+          key={i}
+          className={`px-4 py-3 border-b border-neutral-800 flex items-center gap-3 ${config.bg}`}
+        >
+          <div>{config.icon}</div>
+          <div className="flex-1">
+            <div className="text-sm text-neutral-100">{noti.message}</div>
+            <div className="text-xs text-neutral-400">{noti.time}</div>
+          </div>
+        </li>
+      );
+    })}
+  </ul>
+</div>
 
-          <button
-            className="w-full py-2 text-center text-yellow-500 hover:bg-neutral-800 rounded-b-xl"
-            onClick={markAllRead}
-          >
-            Mark all as read
-          </button>
+
         </div>
       )}
     </div>

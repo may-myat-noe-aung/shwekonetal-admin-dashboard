@@ -147,17 +147,17 @@ const SalesDashboard = () => {
     {/* Transaction Tables */}
     <div className="space-y-6">
       {/* Buy Transactions */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-hidden">
         <BuyTransactions sales={sales} updateStatus={updateStatus} />
       </div>
 
       {/* Sell Transactions */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-hidden">
         <SellTransactions sales={sales} updateStatus={updateStatus} />
       </div>
 
       {/* Delivery Transactions */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-hidden">
         <DeliveryTransactions sales={sales} updateStatus={updateStatus} />
       </div>
     </div>

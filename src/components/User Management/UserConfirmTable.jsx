@@ -7,6 +7,29 @@ export default function UserConfirmTable() {
   const [showPasscodeModal, setShowPasscodeModal] = useState(false);
   const [actionType, setActionType] = useState("");
   const [passcode, setPasscode] = useState("");
+  const [previewPhoto, setPreviewPhoto] = useState(null);
+
+  const [page, setPage] = useState(1); // current page
+  const [perPage, setPerPage] = useState(5); // items per page
+  const [pageWindow, setPageWindow] = useState(1); // sliding window start
+
+  // ✅ Only show pending users
+  const pendingUsers = useMemo(
+    () => users.filter((u) => u.status?.toLowerCase() === "pending"),
+    [users]
+  );
+
+  const totalPages = Math.ceil(pendingUsers.length / perPage);
+  const startPage = pageWindow;
+  const endPage = Math.min(pageWindow + 4, totalPages); // show 5 pages in window
+  const visiblePages = [];
+  for (let i = startPage; i <= endPage; i++) visiblePages.push(i);
+
+  // Paginated users
+  const paginatedUsers = pendingUsers.slice(
+    (page - 1) * perPage,
+    page * perPage
+  );
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -25,12 +48,6 @@ export default function UserConfirmTable() {
     const interval = setInterval(fetchUsers, 1000); // every 60s
     return () => clearInterval(interval);
   }, []);
-
-  // ✅ Only show pending users
-  const pendingUsers = useMemo(
-    () => users.filter((u) => u.status?.toLowerCase() === "pending"),
-    [users]
-  );
 
   const handleAction = async (type, user) => {
     try {
@@ -142,12 +159,15 @@ export default function UserConfirmTable() {
           <tbody>
             {pendingUsers.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-white/50">
+                <td
+                  colSpan={9}
+                  className="py-6 text-center text-white/50 h-[150px]"
+                >
                   No pending users
                 </td>
               </tr>
             ) : (
-              pendingUsers.map((u) => (
+              paginatedUsers.map((u) => (
                 <tr
                   key={u.id}
                   className="hover:bg-neutral-800/50 transition-colors"
@@ -211,6 +231,60 @@ export default function UserConfirmTable() {
             )}
           </tbody>
         </table>
+          {/* Pagination Sliding Window */}
+            <div className="flex flex-col md:flex-row justify-between px-4 py-2 text-sm text-neutral-400 gap-2 md:gap-0 mt-4">
+              <p>
+                Page {totalPages === 0 ? 0 : page} / {totalPages}
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  disabled={page === 1}
+                  onClick={() => {
+                    const newPage = Math.max(1, page - 1);
+                    setPage(newPage);
+                    if (newPage < startPage)
+                      setPageWindow(Math.max(1, pageWindow - 1));
+                  }}
+                  className={`px-3 py-1 rounded-md border border-neutral-700 ${
+                    page === 1
+                      ? "text-neutral-500 cursor-not-allowed"
+                      : "text-yellow-400 hover:bg-neutral-900"
+                  }`}
+                >
+                  Prev
+                </button>
+
+                {visiblePages.map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n)}
+                    className={`px-3 py-1 rounded-md border border-neutral-700 ${
+                      page === n
+                        ? "bg-yellow-500 text-black font-semibold"
+                        : "text-yellow-400 hover:bg-neutral-900"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => {
+                    const newPage = Math.min(totalPages, page + 1);
+                    setPage(newPage);
+                    if (newPage > endPage) setPageWindow(pageWindow + 1);
+                  }}
+                  className={`px-3 py-1 rounded-md border border-neutral-700 ${
+                    page === totalPages
+                      ? "text-neutral-500 cursor-not-allowed"
+                      : "text-yellow-400 hover:bg-neutral-900"
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
       </div>
 
       {/* Detail Modal */}
@@ -255,7 +329,10 @@ export default function UserConfirmTable() {
 
             {/* ID Photos */}
             <div className="grid grid-cols-2 gap-3 mb-5">
-              <div className="bg-neutral-800/70 p-2 rounded-lg">
+              <div
+                className="bg-neutral-800/70 p-2 rounded-lg cursor-pointer"
+                onClick={() => setPreviewPhoto(viewUser.id_front_photo)}
+              >
                 <img
                   src={
                     viewUser.id_front_photo
@@ -271,7 +348,11 @@ export default function UserConfirmTable() {
                   မှတ်ပုံတင် အရှေ့ဘက်
                 </p>
               </div>
-              <div className="bg-neutral-800/70 p-2 rounded-lg">
+
+              <div
+                className="bg-neutral-800/70 p-2 rounded-lg cursor-pointer"
+                onClick={() => setPreviewPhoto(viewUser.id_back_photo)}
+              >
                 <img
                   src={
                     viewUser.id_back_photo
@@ -344,6 +425,24 @@ export default function UserConfirmTable() {
                 Approve <Check size={14} />
               </button>
             </div>
+            {/* Photo Preview Modal */}
+            {previewPhoto && (
+              <div
+                className="fixed inset-0 flex items-center justify-center bg-black/70 z-50"
+                onClick={() => setPreviewPhoto(null)}
+              >
+                <img
+                  src={
+                    previewPhoto.startsWith("http")
+                      ? previewPhoto
+                      : `http://38.60.244.74:3000/uploads/${previewPhoto}`
+                  }
+                  alt="Preview"
+                  className="max-w-[90%] max-h-[90%] rounded-lg shadow-lg object-contain"
+                />
+              </div>
+            )}
+          
           </div>
         </div>
       )}
