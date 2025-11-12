@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Trash2, Mail } from "lucide-react";
 
-export default function UserDetailModal({ viewUser, onClose, handleDelete }) {
+export default function UserDetailModal({ viewUser, onClose }) {
   const [previewPhoto, setPreviewPhoto] = useState(null); // for photo preview
 
   if (!viewUser) return null;
@@ -123,17 +123,7 @@ export default function UserDetailModal({ viewUser, onClose, handleDelete }) {
             ))}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4">
-            <button
-              onClick={() => handleDelete(viewUser)}
-              className="flex items-center gap-1 px-3 py-1 bg-rose-600 hover:bg-rose-700 rounded text-white text-sm"
-            >
-              <Trash2 className="h-4 w-4" /> Delete
-            </button>
-
-       
-          </div>
+         
         </div>
       </div>
 
