@@ -248,13 +248,15 @@ export default function ReportManagement() {
                         type="number"
                         min="0"
                         value={addGold[k]}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setAddGold({
                             ...addGold,
-                            [k]: parseFloat(e.target.value) || 0,
-                          })
-                        }
+                            [k]: value === "" ? "" : parseFloat(value),
+                          });
+                        }}
                         className="w-20 px-2 py-1 bg-neutral-950 border border-neutral-700 rounded-lg text-sm"
+                        placeholder={labelMap[i]}
                       />
                     </div>
                   );

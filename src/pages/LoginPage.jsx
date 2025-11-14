@@ -97,6 +97,7 @@
 
 
 
+
 import React, { useState } from "react";
 import { Lock, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -106,39 +107,47 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    if (!email || !password) return alert("Please fill all fields");
+const handleLogin = async (e) => {
+  e.preventDefault();
+  if (!email || !password) return alert("Please fill all fields");
 
-    try {
-      const res = await fetch("http://38.60.244.74:3000/login-admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const res = await fetch("http://38.60.244.74:3000/login-admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (res.ok) {
-        // save to localStorage
-        localStorage.setItem("adminRole", data.role);
-        localStorage.setItem("adminId", data.id);
+    if (res.ok) {
+      // save to localStorage
+      localStorage.setItem("adminRole", data.role);
+      localStorage.setItem("adminId", data.id);
 
-        // show alert
-        alert(data.message || "Login successful!");
+      alert(data.message || "Login successful!");
 
-        // redirect based on role
-        if (data.role === "owner") navigate("/");
-        else if (data.role === "manager") navigate("/sale");
-        else if (data.role === "seller") navigate("/sale");
-      } else {
-        alert(data.message || "❌ Login failed");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("❌ Something went wrong");
+      // redirect based on role
+      if (data.role === "owner") navigate("/");
+      else if (data.role === "manager") navigate("/sale");
+      else if (data.role === "seller") navigate("/sale");
+    } else {
+      // login failed, remove any stale data
+      localStorage.removeItem("adminRole");
+      localStorage.removeItem("adminId");
+
+      alert(data.message || "❌ Login failed");
     }
-  };
+  } catch (err) {
+    console.error(err);
+
+    // clear login-related data on error
+    localStorage.removeItem("adminRole");
+    localStorage.removeItem("adminId");
+
+    alert("❌ Something went wrong");
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-950 text-white">

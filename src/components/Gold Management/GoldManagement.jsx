@@ -472,32 +472,31 @@ export default function GoldManagementPage() {
     fetchLatestSellPrice(); // ✅ SummaryCard Sell Price
   }, []);
 
-const fetchPriceHistory = async () => {
-  try {
-    const [buyRes, sellRes] = await Promise.all([
-      axios.get(`${API_BASE}/buying-prices`),
-      axios.get(`${API_BASE}/selling-prices`),
-    ]);
+  const fetchPriceHistory = async () => {
+    try {
+      const [buyRes, sellRes] = await Promise.all([
+        axios.get(`${API_BASE}/buying-prices`),
+        axios.get(`${API_BASE}/selling-prices`),
+      ]);
 
-    // Get today (first row) only
-    const todayBuyDate = Object.keys(buyRes.data)[0]; // assuming first row is today
-    const todaySellDate = Object.keys(sellRes.data)[0];
+      // Get today (first row) only
+      const todayBuyDate = Object.keys(buyRes.data)[0]; // assuming first row is today
+      const todaySellDate = Object.keys(sellRes.data)[0];
 
-    const buyData = Object.entries(buyRes.data[todayBuyDate])
-      .filter(([_, price]) => price !== null)
-      .map(([time, price]) => ({ time, buy: price }));
+      const buyData = Object.entries(buyRes.data[todayBuyDate])
+        .filter(([_, price]) => price !== null)
+        .map(([time, price]) => ({ time, buy: price }));
 
-    const sellData = Object.entries(sellRes.data[todaySellDate])
-      .filter(([_, price]) => price !== null)
-      .map(([time, price]) => ({ time, sell: price }));
+      const sellData = Object.entries(sellRes.data[todaySellDate])
+        .filter(([_, price]) => price !== null)
+        .map(([time, price]) => ({ time, sell: price }));
 
-    setChartBuyData(buyData);
-    setChartSellData(sellData);
-  } catch (err) {
-    console.error("Failed to fetch price history", err);
-  }
-};
-
+      setChartBuyData(buyData);
+      setChartSellData(sellData);
+    } catch (err) {
+      console.error("Failed to fetch price history", err);
+    }
+  };
 
   // Fetch latest buy price from cloud for SummaryCard
   const fetchLatestBuyPrice = async () => {
@@ -552,39 +551,38 @@ const fetchPriceHistory = async () => {
     setTimer(interval);
   };
 
-const applyUpdate = async (type) => {
-  try {
-    if (type === "buy") {
-      await axios.post(`${API_BASE}/buying-prices`, { price: buyInput });
+  const applyUpdate = async (type) => {
+    try {
+      if (type === "buy") {
+        await axios.post(`${API_BASE}/buying-prices`, { price: buyInput });
 
-      // Refetch today's data
-      const res = await axios.get(`${API_BASE}/buying-prices`);
-      const todayBuyDate = Object.keys(res.data)[0];
-      const buyData = Object.entries(res.data[todayBuyDate])
-        .filter(([_, price]) => price !== null)
-        .map(([time, buy]) => ({ time, buy }));
+        // Refetch today's data
+        const res = await axios.get(`${API_BASE}/buying-prices`);
+        const todayBuyDate = Object.keys(res.data)[0];
+        const buyData = Object.entries(res.data[todayBuyDate])
+          .filter(([_, price]) => price !== null)
+          .map(([time, buy]) => ({ time, buy }));
 
-      setChartBuyData(buyData);
-      fetchLatestBuyPrice();
-    } else if (type === "sell") {
-      await axios.post(`${API_BASE}/selling-prices`, { price: sellInput });
+        setChartBuyData(buyData);
+        fetchLatestBuyPrice();
+      } else if (type === "sell") {
+        await axios.post(`${API_BASE}/selling-prices`, { price: sellInput });
 
-      const res = await axios.get(`${API_BASE}/selling-prices`);
-      const todaySellDate = Object.keys(res.data)[0];
-      const sellData = Object.entries(res.data[todaySellDate])
-        .filter(([_, price]) => price !== null)
-        .map(([time, sell]) => ({ time, sell }));
+        const res = await axios.get(`${API_BASE}/selling-prices`);
+        const todaySellDate = Object.keys(res.data)[0];
+        const sellData = Object.entries(res.data[todaySellDate])
+          .filter(([_, price]) => price !== null)
+          .map(([time, sell]) => ({ time, sell }));
 
-      setChartSellData(sellData);
-      fetchLatestSellPrice();
+        setChartSellData(sellData);
+        fetchLatestSellPrice();
+      }
+    } catch (err) {
+      alert("❌ Failed to update price: " + err.message);
+    } finally {
+      setShowModal(false);
     }
-  } catch (err) {
-    alert("❌ Failed to update price: " + err.message);
-  } finally {
-    setShowModal(false);
-  }
-};
-
+  };
 
   const handlePasswordSubmit = async () => {
     if (!password) {
@@ -627,8 +625,6 @@ const applyUpdate = async (type) => {
         <section className="">
           {/* Buy */}
           <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
-       
-
             <div className="col-span-1 md:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 2xl:py-6 w-full">
               <h3 className="mb-6 font-semibold text-sm md:text-base">
                 Latest Buy Price
@@ -644,12 +640,17 @@ const applyUpdate = async (type) => {
                   />
                 </div>
                 <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2">
-                  <input
-                    type="number"
-                    value={buyInput}
-                    onChange={(e) => setBuyInput(Number(e.target.value))}
-                    className="rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm flex-1 w-full"
-                  />
+               <input
+  type="number"
+  value={buyInput}
+  onChange={(e) => {
+    const value = e.target.value;
+    setBuyInput(value === "" ? "" : Number(value));
+  }}
+  className="rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm flex-1 w-full"
+  placeholder="Buy Price"
+/>
+
                   <button
                     onClick={() => handleUpdateClick("buy")}
                     className="bg-green-500 text-white px-3 py-2 rounded-md text-sm w-full sm:w-auto"
@@ -659,7 +660,7 @@ const applyUpdate = async (type) => {
                 </div>
               </div>
             </div>
-                 <div className="col-span-1 md:col-span-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 ">
+            <div className="col-span-1 md:col-span-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 ">
               <h3 className="font-semibold mb-3">Buy Price & Chart</h3>
 
               <div className="h-48 w-full">
@@ -703,8 +704,6 @@ const applyUpdate = async (type) => {
 
           {/* Sell */}
           <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center mt-6 ">
-          
-
             <div className="col-span-1 md:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 2xl:py-6  w-full">
               <h3 className="mb-6 font-semibold text-sm md:text-base">
                 Latest Sell Price
@@ -720,12 +719,17 @@ const applyUpdate = async (type) => {
                   />
                 </div>
                 <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2">
-                  <input
-                    type="number"
-                    value={sellInput}
-                    onChange={(e) => setSellInput(Number(e.target.value))}
-                    className="rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm flex-1 w-full"
-                  />
+            <input
+  type="number"
+  value={sellInput}
+  onChange={(e) => {
+    const value = e.target.value;
+    setSellInput(value === "" ? "" : Number(value));
+  }}
+  className="rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm flex-1 w-full"
+  placeholder="Sell Price"
+/>
+
                   <button
                     onClick={() => handleUpdateClick("sell")}
                     className="bg-red-600 text-white px-3 py-2 rounded-md text-sm w-full sm:w-auto"
@@ -735,7 +739,7 @@ const applyUpdate = async (type) => {
                 </div>
               </div>
             </div>
-              <div className="col-span-1 md:col-span-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
+            <div className="col-span-1 md:col-span-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
               <h3 className="font-semibold mb-3">Sell Price & Chart</h3>
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -808,12 +812,12 @@ const applyUpdate = async (type) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
-                   onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          handlePasswordSubmit();
-        }
-      }}
-      autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handlePasswordSubmit();
+                    }
+                  }}
+                  autoFocus
                   className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
                 />
                 <div className="flex justify-between">

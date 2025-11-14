@@ -23,7 +23,7 @@ export default function OverviewTab() {
 
   return (
     <div className="">
-      <h3 className="font-bold text-2xl mb-6 text-amber-400">Personal Information</h3>
+      <h3 className="font-bold text-xl mb-6 text-amber-400">Personal Information</h3>
       <div className="grid grid-cols-2 gap-6">
         <div className="space-y-4">
           <div>
@@ -55,14 +55,7 @@ export default function OverviewTab() {
           </div>
         </div>
 
-        <div className="col-span-2 space-y-4">
-          <div>
-            <label className="text-sm text-neutral-400 block mb-2">Role</label>
-            <div className="bg-neutral-800 rounded-lg p-2 border border-neutral-700">
-              <p className="font-medium text-sm">{account.role}</p>
-            </div>
-          </div>
-        </div>
+     
       </div>
     </div>
   );

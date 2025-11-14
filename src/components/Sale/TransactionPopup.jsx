@@ -424,7 +424,7 @@ export default function TransactionPopup({
 
           {/* --- Photos --- */}
           {txn.type !== "sell" && (
-            <div className="flex gap-2 mb-6 overflow-hidden scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
+            <div className="flex gap-2 mb-6 overflow-y-hidden scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
               {txn.photos?.map((fileName, idx) => (
                 <img
                   key={idx}

@@ -337,6 +337,9 @@ const BuyTransactions = ({ sales, updateStatus }) => {
           navigate={navigate}
         />
       )}
+
+
+
     </div>
   );
 };

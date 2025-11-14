@@ -1,4 +1,3 @@
-
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
@@ -17,7 +16,7 @@ export default function GoldConversion() {
   const [password, setPassword] = useState("");
 
   // Countdown timer (optional, from your modal UI)
-  const [countdown, setCountdown] = useState(10);
+
 
   const fetchFormula = async () => {
     try {
@@ -52,7 +51,6 @@ export default function GoldConversion() {
   // Open password modal
   const handleUpdateClick = () => {
     setShowModal(true);
-    setCountdown(10);
   };
 
   // Cancel modal
@@ -70,9 +68,12 @@ export default function GoldConversion() {
 
     try {
       // --- Verify passcode dynamically ---
-      const verifyResponse = await axios.post("http://38.60.244.74:3000/admin/verify-admin-passcode", {
-        passcode: password,
-      });
+      const verifyResponse = await axios.post(
+        "http://38.60.244.74:3000/admin/verify-admin-passcode",
+        {
+          passcode: password,
+        }
+      );
 
       if (!verifyResponse.data.success) {
         alert("Incorrect password!");
@@ -112,7 +113,10 @@ export default function GoldConversion() {
           <input
             type="number"
             value={yway}
-            onChange={(e) => setYway(Number(e.target.value))}
+            onChange={(e) => {
+              const value = e.target.value;
+              setYway(value === "" ? "" : Number(value));
+            }}
             className="w-20 rounded-lg bg-neutral-800 border px-2 py-1 text-sm"
             placeholder="ရွေး"
           />
@@ -139,15 +143,14 @@ export default function GoldConversion() {
       </div>
 
       {goldList.length > 0 && showTable && (
-     <div
-  className="overflow-y-auto mt-2 border border-neutral-800 rounded-lg scrollbar-thin scrollbar-thumb-yellow-500 scrollbar-track-neutral-900 hover:scrollbar-thumb-yellow-400 transition-all duration-200"
-  style={{
-    maxHeight: "8rem",
-    scrollbarWidth: "thin",
-    scrollbarColor: "#eab308 #171717", // (yellow-500 thumb, dark track)
-  }}
->
-
+        <div
+          className="overflow-y-auto mt-2 border border-neutral-800 rounded-lg scrollbar-thin scrollbar-thumb-yellow-500 scrollbar-track-neutral-900 hover:scrollbar-thumb-yellow-400 transition-all duration-200"
+          style={{
+            maxHeight: "8rem",
+            scrollbarWidth: "thin",
+            scrollbarColor: "#eab308 #171717", // (yellow-500 thumb, dark track)
+          }}
+        >
           <table className="w-full text-sm border-collapse">
             <thead className="sticky top-0 bg-neutral-900 z-10">
               <tr className="border-b border-neutral-700">
@@ -174,52 +177,51 @@ export default function GoldConversion() {
       )}
 
       {/* Password Modal */}
- {showModal && (
-  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-    <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 relative">
-      <button
-        onClick={cancelUpdate}
-        className="absolute top-2 right-2 text-neutral-400 hover:text-white"
-      >
-        <X size={18} />
-      </button>
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 relative">
+            <button
+              onClick={cancelUpdate}
+              className="absolute top-2 right-2 text-neutral-400 hover:text-white"
+            >
+              <X size={18} />
+            </button>
 
-      <h3 className="text-lg font-semibold mb-4 text-center">
-        Enter Passcode to Update
-      </h3>
+            <h3 className="text-lg font-semibold mb-4 text-center">
+              Enter Passcode to Update
+            </h3>
 
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder="Enter passcode"
-        className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            handlePasswordSubmit();
-          }
-        }}
-        autoFocus
-      />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter passcode"
+              className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handlePasswordSubmit();
+                }
+              }}
+              autoFocus
+            />
 
-      <div className="flex justify-between">
-        <button
-          onClick={cancelUpdate}
-          className="bg-neutral-700 text-white px-3 py-2 rounded-md text-sm"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handlePasswordSubmit}
-          className="bg-yellow-500 text-black px-3 py-2 rounded-md text-sm"
-        >
-          Confirm
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+            <div className="flex justify-between">
+              <button
+                onClick={cancelUpdate}
+                className="bg-neutral-700 text-white px-3 py-2 rounded-md text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePasswordSubmit}
+                className="bg-yellow-500 text-black px-3 py-2 rounded-md text-sm"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
-}
+} 
