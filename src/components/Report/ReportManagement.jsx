@@ -287,6 +287,7 @@ export default function ReportManagement() {
           <BuyTable />
           <SellTable />
           <DeliveryTable />
+          
         </section>
 
         {/* --- Charts --- */}

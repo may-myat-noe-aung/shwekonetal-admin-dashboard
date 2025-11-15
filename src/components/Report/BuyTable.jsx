@@ -82,28 +82,52 @@ export default function BuyTable() {
     setSortConfig({ key, direction });
   };
 
+  // const sortedData = useMemo(() => {
+  //   const sorted = [...buyData];
+  //   sorted.sort((a, b) => {
+  //     const aVal = a[sortConfig.key];
+  //     const bVal = b[sortConfig.key];
+  //     if (typeof aVal === "string")
+  //       return sortConfig.direction === "asc"
+  //         ? aVal.localeCompare(bVal)
+  //         : bVal.localeCompare(aVal);
+  //     if (aVal instanceof Date)
+  //       return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+  //     return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+  //   });
+  //   return sorted;
+  // }, [buyData, sortConfig]);
+
+  // Export EXCEL
+
   const sortedData = useMemo(() => {
     const sorted = [...buyData];
     sorted.sort((a, b) => {
-      const aVal = a[sortConfig.key];
-      const bVal = b[sortConfig.key];
-      if (typeof aVal === "string")
+      let aVal = a[sortConfig.key];
+      let bVal = b[sortConfig.key];
+
+      // handle null/undefined
+      if (aVal == null) aVal = "";
+      if (bVal == null) bVal = "";
+
+      if (typeof aVal === "string") {
         return sortConfig.direction === "asc"
           ? aVal.localeCompare(bVal)
           : bVal.localeCompare(aVal);
-      if (aVal instanceof Date)
+      }
+      if (aVal instanceof Date) {
         return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
+      }
       return sortConfig.direction === "asc" ? aVal - bVal : bVal - aVal;
     });
     return sorted;
   }, [buyData, sortConfig]);
 
-  // Export EXCEL
   const handleExport = async () => {
     try {
       const res = await fetch("http://38.60.244.74:3000/sales");
       const data = await res.json();
-      
+
       if (!data.success && !Array.isArray(data.data)) {
         alert("No data found to export.");
         return;
@@ -114,15 +138,20 @@ export default function BuyTable() {
         .filter((s) => ["buy"].includes(s.type?.toLowerCase()))
         .filter((s) => {
           // search (fullname, id_number, email)
-          const text = `${s.fullname} ${s.userid} ${s.seller} ${s.manager} ${s.price} ${s.method}`.toLowerCase();
+          const text =
+            `${s.fullname} ${s.userid} ${s.seller} ${s.manager} ${s.price} ${s.method}`.toLowerCase();
           const matchesSearch = searchTerm
-          ? text.includes(searchTerm.toLowerCase())
-          : true;
+            ? text.includes(searchTerm.toLowerCase())
+            : true;
 
           // date range filter
           const createdAt = new Date(s.created_at);
-          const fromTime = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
-          const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
+          const fromTime = fromDate
+            ? new Date(fromDate).setHours(0, 0, 0, 0)
+            : null;
+          const toTime = toDate
+            ? new Date(toDate).setHours(23, 59, 59, 999)
+            : null;
 
           let matchesDate = false;
 
@@ -133,11 +162,16 @@ export default function BuyTable() {
           } else if (fromTime || toTime) {
             // ✅ Only one date → one-day filter
             const singleDate = new Date(fromTime || toTime);
-            const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
-            const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
+            const startOfDay = new Date(
+              singleDate.setHours(0, 0, 0, 0)
+            ).getTime();
+            const endOfDay = new Date(
+              singleDate.setHours(23, 59, 59, 999)
+            ).getTime();
 
             matchesDate =
-              createdAt.getTime() >= startOfDay && createdAt.getTime() <= endOfDay;
+              createdAt.getTime() >= startOfDay &&
+              createdAt.getTime() <= endOfDay;
           } else {
             // ✅ No date filters → show all
             matchesDate = true;
@@ -196,6 +230,10 @@ export default function BuyTable() {
     // Search filter
     const matchesSearch =
       item.userid?.toLowerCase().includes(term) ||
+      item.fullname?.toLowerCase().includes(term) ||
+      item.seller?.toLowerCase().includes(term) ||
+      item.manager?.toLowerCase().includes(term) ||
+      item.price?.toString().toLowerCase().includes(term) ||
       item.method?.toLowerCase().includes(term) ||
       item.type?.toLowerCase().includes(term) ||
       item.gold?.toString().includes(term) ||
@@ -257,9 +295,10 @@ export default function BuyTable() {
               />
             </div>
 
-            <button 
+            <button
               onClick={handleExport}
-              className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white">
+              className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
+            >
               <Download size={14} /> Export
             </button>
           </div>
@@ -303,9 +342,12 @@ export default function BuyTable() {
           <tr className="border-b border-neutral-800 text-neutral-500">
             {[
               { label: "User ID", key: "userid" },
-              { label: "Seller", key: "seller" }, // ✅ new
+              { label: "User Name", key: "name" },
+              { label: "Seller", key: "seller" },
               { label: "Manager", key: "manager" },
-              { label: "ကျပ် ပဲ ရွေး", key: "gold" },
+              { label: "Agent", key: "agent" },
+
+              { label: "Gold", key: "gold" },
               { label: "Price", key: "price" },
               { label: "Date", key: "date" },
               { label: "Method", key: "method" },
@@ -354,20 +396,25 @@ export default function BuyTable() {
                 className="border-b border-neutral-800 hover:bg-neutral-800/50"
               >
                 <td className="py-2 px-3 text-center">{s.userid}</td>
+                <td className="py-2 px-3 text-center">{s.fullname}</td>
                 <td className="py-2 px-3 text-center">
                   {s.seller || "-"}
                 </td>{" "}
-                {/* ✅ new */}
                 <td className="py-2 px-3 text-center">{s.manager || "-"}</td>
+                <td className="py-2 px-3">{s.agent || "Normal"}</td>
                 <td className="py-2 px-3 text-center">{s.gold}</td>
                 <td className="py-2 px-3 text-center">
                   {s.price.toLocaleString()} ကျပ်
                 </td>
                 <td className="py-2 px-3 text-center">
-                  {s.date.toLocaleDateString()}
+                  {new Intl.DateTimeFormat("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  }).format(new Date(s.date || s.created_at))}
                 </td>
                 <td className="py-2 px-3 text-center">{s.method}</td>
-                <td className="py-2 px-3 text-center">
+                <td className="py-2 px-3 flex justify-center">
                   <button
                     onClick={() => setSelectedTxn(s)}
                     className="flex items-center justify-center gap-1 px-3 py-1.5 text-sm font-medium rounded-full bg-yellow-600 text-white hover:bg-yellow-500 transition-all duration-200"
@@ -427,7 +474,6 @@ export default function BuyTable() {
         </div>
       </div>
 
-      {/* --- Details Popup --- */}
       {/* --- BUY TRANSACTION DETAILS --- */}
       {selectedTxn && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
@@ -484,10 +530,15 @@ export default function BuyTable() {
                   </p>
                   <p>
                     <span className="text-neutral-400">Date -</span>{" "}
-                    {selectedTxn.date
-                      ? selectedTxn.date.toLocaleDateString()
-                      : "-"}
+                    {new Intl.DateTimeFormat("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    }).format(
+                      new Date(selectedTxn.date || selectedTxn.created_at)
+                    )}
                   </p>
+
                   <p>
                     <span className="text-neutral-400">Time -</span>{" "}
                     {selectedTxn.date
@@ -507,6 +558,10 @@ export default function BuyTable() {
                     >
                       {selectedTxn.status || "-"}
                     </span>
+                  </p>
+                  <p>
+                    <span className="text-neutral-400">Agent -</span>{" "}
+                    {selectedTxn.agent || "-"}
                   </p>
                 </div>
               </div>
@@ -555,17 +610,18 @@ export default function BuyTable() {
             )}
 
             {/* --- Photos --- */}
-            <div className="flex gap-2 overflow-hidden">
-              {selectedTxn.photos?.map((file, idx) => (
-                <img
-                  key={idx}
-                  src={`${API_BASE}/uploads/${file}`}
-                  alt="Proof"
-                  onClick={() => setPreviewImg(`${API_BASE}/uploads/${file}`)}
-                  className="w-28 h-40 object-cover border border-neutral-700 rounded-lg cursor-pointer hover:scale-105 transition"
-                />
-              ))}
-            </div>
+    <div className="flex gap-2 overflow-x-auto overflow-y-hidden scrollbar-hidden">
+  {selectedTxn.photos?.map((file, idx) => (
+    <img
+      key={idx}
+      src={`${API_BASE}/uploads/${file}`}
+      alt="Proof"
+      onClick={() => setPreviewImg(`${API_BASE}/uploads/${file}`)}
+      className="w-28 h-40 object-cover border border-neutral-700 rounded-lg cursor-pointer hover:scale-105 transition flex-shrink-0"
+    />
+  ))}
+</div>
+
           </div>
         </div>
       )}

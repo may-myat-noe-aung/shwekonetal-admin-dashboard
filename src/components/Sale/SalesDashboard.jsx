@@ -235,21 +235,26 @@ const SalesDashboard = () => {
   }, []);
 
   // --- Fetch Chart Data ---
-  useEffect(() => {
-    const fetchChartData = async () => {
-      try {
-        const res = await fetch("http://38.60.244.74:3000/gold-times-today");
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          setChartData(json.data);
-        }
-      } catch (err) {
-        console.error("Failed to load chart data:", err);
+useEffect(() => {
+  const fetchChartData = async () => {
+    try {
+      const res = await fetch("http://38.60.244.74:3000/gold-times-today");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setChartData(json.data);
       }
-    };
+    } catch (err) {
+      console.error("Failed to load chart data:", err);
+    }
+  };
 
+  const timer = setTimeout(() => {
     fetchChartData();
-  }, []);
+  }, 500); // 500ms delay
+
+  return () => clearTimeout(timer); // cleanup on unmount
+}, []);
+
 
   // --- Derived Data for SummaryCards ---
   const totalPrice = useMemo(

@@ -110,16 +110,23 @@ export default function GoldConversion() {
       <div className="flex items-center justify-between gap-2 flex-wrap mt-2">
         <div className="flex items-center gap-2">
           <span>1 ကျပ် = </span>
-          <input
-            type="number"
-            value={yway}
-            onChange={(e) => {
-              const value = e.target.value;
-              setYway(value === "" ? "" : Number(value));
-            }}
-            className="w-20 rounded-lg bg-neutral-800 border px-2 py-1 text-sm"
-            placeholder="ရွေး"
-          />
+       <input
+  type="number"
+  value={yway}
+  onChange={(e) => {
+    const value = e.target.value;
+    setYway(value === "" ? "" : Number(value));
+  }}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleUpdateClick(); // <-- same as clicking Update button
+    }
+  }}
+  className="w-20 rounded-lg bg-neutral-800 border px-2 py-1 text-sm"
+  placeholder="ရွေး"
+/>
+
           <span> ရွေး </span>
           <button
             onClick={handleUpdateClick}
@@ -224,4 +231,4 @@ export default function GoldConversion() {
       )}
     </section>
   );
-} 
+}  

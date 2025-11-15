@@ -150,6 +150,7 @@ export default function TransactionPopup({
                     {txn.type || "-"}
                   </span>
                 </p>
+
                 <p>
                   <span className="text-neutral-400">ကျပ် ပဲ ရွေး -</span>{" "}
                   {txn.gold}
@@ -162,6 +163,22 @@ export default function TransactionPopup({
                   <span className="text-neutral-400">Payment Method -</span>{" "}
                   {txn.method || "-"}
                 </p>
+
+                <p>
+                  <span className="text-neutral-400">
+                    Date -{" "}
+                    {new Intl.DateTimeFormat("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    }).format(new Date(txn.date || txn.created_at))}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-neutral-400">Time -</span>{" "}
+                  {txn.date ? new Date(txn.date).toLocaleTimeString() : "-"}
+                </p>
+
                 <p>
                   <span className="text-neutral-400">Status -</span>{" "}
                   <span
@@ -177,12 +194,8 @@ export default function TransactionPopup({
                   </span>
                 </p>
                 <p>
-                  <span className="text-neutral-400">Date -</span>{" "}
-                  {txn.date ? new Date(txn.date).toLocaleDateString() : "-"}
-                </p>
-                <p>
-                  <span className="text-neutral-400">Time -</span>{" "}
-                  {txn.date ? new Date(txn.date).toLocaleTimeString() : "-"}
+                  <span className="text-neutral-400">Agent -</span>{" "}
+                  {txn.agent || "Normal"}
                 </p>
               </div>
             </div>
@@ -200,37 +213,35 @@ export default function TransactionPopup({
                   <span className="text-neutral-400">User ID -</span>{" "}
                   {txn.userid || "-"}
                 </p>
+
+                <p>
+                  <span className="text-neutral-400">ကျပ် ပဲ ရွေး -</span>{" "}
+                  {txn.gold}
+                </p>
+
+                <p>
+                  <span className="text-neutral-400">Date -</span>{" "}
+                  {new Intl.DateTimeFormat("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  }).format(new Date(txn.date || txn.created_at))}
+                </p>
+                <p>
+                  <span className="text-neutral-400">Time -</span>{" "}
+                  {txn.date ? new Date(txn.date).toLocaleTimeString() : "-"}
+                </p>
+
                 <p>
                   <span className="text-neutral-400">Type -</span>{" "}
                   <span className="font-semibold px-2 py-1 rounded-full text-red-400 bg-red-900/20">
                     {txn.type || "-"}
                   </span>
                 </p>
+
                 <p>
-                  <span className="text-neutral-400">ကျပ် ပဲ ရွေး -</span>{" "}
-                  {txn.gold}
-                </p>
-                <p>
-                  <span className="text-neutral-400">Status -</span>{" "}
-                  <span
-                    className={`font-semibold px-2 py-1 rounded-full ${
-                      txn.status === "approved"
-                        ? "text-emerald-400 bg-emerald-900/20"
-                        : txn.status === "pending"
-                        ? "text-yellow-400 bg-yellow-900/20"
-                        : "text-rose-400 bg-rose-900/20"
-                    }`}
-                  >
-                    {txn.status || "-"}
-                  </span>
-                </p>
-                <p>
-                  <span className="text-neutral-400">Date -</span>{" "}
-                  {txn.date ? new Date(txn.date).toLocaleDateString() : "-"}
-                </p>
-                <p>
-                  <span className="text-neutral-400">Time -</span>{" "}
-                  {txn.date ? new Date(txn.date).toLocaleTimeString() : "-"}
+                  <span className="text-neutral-400">Agent -</span>{" "}
+                  {txn.agent || "Normal"}
                 </p>
 
                 {/* 💳 PAYMENT GROUP */}
@@ -280,9 +291,11 @@ export default function TransactionPopup({
                       </p>
                       <p>
                         <span className="text-neutral-400">Date -</span>{" "}
-                        {txn.date
-                          ? new Date(txn.date).toLocaleDateString()
-                          : "-"}
+                        {new Intl.DateTimeFormat("en-GB", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        }).format(new Date(txn.date || txn.created_at))}
                       </p>
                       <p>
                         <span className="text-neutral-400">Time -</span>{" "}
@@ -303,6 +316,10 @@ export default function TransactionPopup({
                         >
                           {txn.status || "-"}
                         </span>
+                      </p>
+                      <p>
+                        <span className="text-neutral-400">Agent -</span>{" "}
+                        {txn.agent || "Normal"}
                       </p>
                     </div>
                   </div>
@@ -423,23 +440,24 @@ export default function TransactionPopup({
           )}
 
           {/* --- Photos --- */}
-          {txn.type !== "sell" && (
-            <div className="flex gap-2 mb-6 overflow-y-hidden scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
-              {txn.photos?.map((fileName, idx) => (
-                <img
-                  key={idx}
-                  src={`http://38.60.244.74:3000/uploads/${fileName}`}
-                  alt={`Photo ${idx + 1}`}
-                  onClick={() =>
-                    setLocalPreviewImg(
-                      `http://38.60.244.74:3000/uploads/${fileName}`
-                    )
-                  }
-                  className="cursor-pointer rounded-lg border border-neutral-700 hover:scale-105 transition w-36 h-48 object-cover flex-shrink-0"
-                />
-              ))}
-            </div>
-          )}
+     {txn.type !== "sell" && (
+  <div className="flex gap-2 mb-6 overflow-x-auto overflow-y-hidden scrollbar-none">
+    {txn.photos?.map((fileName, idx) => (
+      <img
+        key={idx}
+        src={`http://38.60.244.74:3000/uploads/${fileName}`}
+        alt={`Photo ${idx + 1}`}
+        onClick={() =>
+          setLocalPreviewImg(
+            `http://38.60.244.74:3000/uploads/${fileName}`
+          )
+        }
+        className="cursor-pointer rounded-lg border border-neutral-700 hover:scale-105 transition w-36 h-48 object-cover flex-shrink-0"
+      />
+    ))}
+  </div>
+)}
+
 
           {/* --- Buttons --- */}
           <div className="flex justify-end gap-3">
@@ -510,18 +528,17 @@ export default function TransactionPopup({
             </h3>
 
             {/* Password Input */}
-      <input
-  type="password"
-  value={passcode}
-  onChange={(e) => setPasscode(e.target.value)}
-  placeholder="••••••"
-  className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
-  autoFocus
-  onKeyDown={(e) => {
-    if (e.key === "Enter") handleConfirm();
-  }}
-/>
-
+            <input
+              type="password"
+              value={passcode}
+              onChange={(e) => setPasscode(e.target.value)}
+              placeholder="Enter passcode"
+              className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleConfirm();
+              }}
+            />
 
             {/* Action Buttons */}
             <div className="flex justify-between gap-3">

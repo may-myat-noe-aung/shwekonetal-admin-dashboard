@@ -23,7 +23,7 @@ const DeliveryTransactions = ({ sales, updateStatus }) => {
 
   const [salesData, setSalesData] = useState([]);
   const [fromDate, setFromDate] = useState("");
-const [toDate, setToDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
 
   // Fetch API
@@ -41,43 +41,43 @@ const [toDate, setToDate] = useState("");
   }, []);
 
   // Filter sales for "delivery" and search across multiple fields
-const filteredSales = useMemo(() => {
-  const term = searchTerm.toLowerCase();
-  return salesData
-    .filter(s => s.type === "delivery")
-    .filter(
-      s =>
-        (s.id?.toString().toLowerCase().includes(term)) ||
-        (s.userid?.toString().toLowerCase().includes(term)) ||
-        (s.fullname?.toString().toLowerCase().includes(term)) ||
-        (s.status?.toString().toLowerCase().includes(term)) ||
-        (s.method?.toString().toLowerCase().includes(term)) ||
-        (s.deli_fees?.toString().toLowerCase().includes(term)) ||
-        (s.service_fees?.toString().toLowerCase().includes(term))
-    )
-    // ✅ date filter
-    .filter((s) => {
-      const itemTime = s.date.getTime();
-      const fromTime = fromDate ? new Date(fromDate).getTime() : null;
-      const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null; // include full day
+  const filteredSales = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return salesData
+      .filter(s => s.type === "delivery")
+      .filter(
+        s =>
+          (s.id?.toString().toLowerCase().includes(term)) ||
+          (s.userid?.toString().toLowerCase().includes(term)) ||
+          (s.fullname?.toString().toLowerCase().includes(term)) ||
+          (s.status?.toString().toLowerCase().includes(term)) ||
+          (s.method?.toString().toLowerCase().includes(term)) ||
+          (s.deli_fees?.toString().toLowerCase().includes(term)) ||
+          (s.service_fees?.toString().toLowerCase().includes(term))
+      )
+      // ✅ date filter
+      .filter((s) => {
+        const itemTime = s.date.getTime();
+        const fromTime = fromDate ? new Date(fromDate).getTime() : null;
+        const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null; // include full day
 
-      // ✅ Case 1: fromDate & toDate both exist → range
-      if (fromTime && toTime) {
-        return itemTime >= fromTime && itemTime <= toTime;
-      }
+        // ✅ Case 1: fromDate & toDate both exist → range
+        if (fromTime && toTime) {
+          return itemTime >= fromTime && itemTime <= toTime;
+        }
 
-      // ✅ Case 2: only one date → single day filter
-      if (fromTime || toTime) {
-        const singleDate = new Date(fromTime || toTime);
-        const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
-        const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
-        return itemTime >= startOfDay && itemTime <= endOfDay;
-      }
+        // ✅ Case 2: only one date → single day filter
+        if (fromTime || toTime) {
+          const singleDate = new Date(fromTime || toTime);
+          const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
+          const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
+          return itemTime >= startOfDay && itemTime <= endOfDay;
+        }
 
-      // ✅ Case 3: no filter → show all
-      return true;
-    })
-}, [salesData, searchTerm, fromDate, toDate]);
+        // ✅ Case 3: no filter → show all
+        return true;
+      })
+  }, [salesData, searchTerm, fromDate, toDate]);
 
   const sortedSales = useMemo(() => {
     const sortable = [...filteredSales];
@@ -118,7 +118,7 @@ const filteredSales = useMemo(() => {
     try {
       const res = await fetch("http://38.60.244.74:3000/sales");
       const data = await res.json();
-      
+
       if (!data.success && !Array.isArray(data.data)) {
         alert("No data found to export.");
         return;
@@ -131,8 +131,8 @@ const filteredSales = useMemo(() => {
           // search (fullname, id_number, email)
           const text = `${s.fullname} ${s.userid} ${s.deli_fees} ${s.service_fees} ${s.status}`.toLowerCase();
           const matchesSearch = searchTerm
-          ? text.includes(searchTerm.toLowerCase())
-          : true;
+            ? text.includes(searchTerm.toLowerCase())
+            : true;
 
           // date range filter
           const createdAt = new Date(s.created_at);
@@ -224,47 +224,47 @@ const filteredSales = useMemo(() => {
 
       {/* Header */}
       <div className="">
-            <div className="flex justify-between">
-              <h3 className="text-xl font-semibold text-purple-400">
-                Delivery Transactions
-              </h3>
-              <div className="mb-4">
-                <div className="flex flex-col md:flex-row gap-2 mb-4">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-neutral-400" />
-                    <input
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="All Search..."
-                      className="w-full md:w-56 rounded-2xl bg-neutral-900 border border-neutral-700 pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                      type="text"
-                    />
-                  </div>
-                  <button
-                    onClick={handleExport}
-                    className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
-                  >
-                    <Download size={14} /> Export
-                  </button>
-                </div>
-    
-                <div className="flex gap-3 justify-end">
-                  <input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
-                    className="rounded-2xl bg-yellow-600 text-neutral-900 pl-3 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 hover:bg-yellow-500 focus:ring-yellow-500"
-                  />
-                  <input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
-                    className="rounded-2xl bg-yellow-600 text-neutral-900 pl-3 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 hover:bg-yellow-500 focus:ring-yellow-500"
-                  />
-                </div>
+        <div className="flex justify-between">
+          <h3 className="text-xl font-semibold text-purple-400">
+            Delivery Transactions
+          </h3>
+          <div className="mb-4">
+            <div className="flex flex-col md:flex-row gap-2 mb-4">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-neutral-400" />
+                <input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="All Search..."
+                  className="w-full md:w-56 rounded-2xl bg-neutral-900 border border-neutral-700 pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  type="text"
+                />
               </div>
+              <button
+                onClick={handleExport}
+                className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
+              >
+                <Download size={14} /> Export
+              </button>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="rounded-2xl bg-yellow-600 text-neutral-900 pl-3 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 hover:bg-yellow-500 focus:ring-yellow-500"
+              />
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="rounded-2xl bg-yellow-600 text-neutral-900 pl-3 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 hover:bg-yellow-500 focus:ring-yellow-500"
+              />
             </div>
           </div>
+        </div>
+      </div>
 
       {/* Table */}
       <div className="overflow-x-hidden">
@@ -326,17 +326,24 @@ const filteredSales = useMemo(() => {
                   <td className="py-2 px-3">{s.gold}</td>
                   <td className="py-2 px-3">{s.deli_fees ?? "-"} ကျပ်</td>
                   <td className="py-2 px-3">{s.service_fees ?? "-"}ကျပ်</td>
-                  <td className="py-2 px-3">{s.date.toLocaleDateString()}</td>
-                  <td className="py-2 px-3">{s.date.toLocaleTimeString()}</td>
+                  <td className="py-2 px-3 whitespace-nowrap">
+                    {new Intl.DateTimeFormat("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    }).format(new Date(s.date || s.created_at))}
+                  </td>
+                  <td className="py-2 px-3 whitespace-nowrap">
+                    {s.date.toLocaleTimeString()}
+                  </td>
                   <td className="py-2 px-3 capitalize">{s.method}</td>
                   <td
-                    className={`py-2 px-3 capitalize font-semibold ${
-                      s.status === "approved"
+                    className={`py-2 px-3 capitalize font-semibold ${s.status === "approved"
                         ? "text-emerald-400"
                         : s.status === "pending"
-                        ? "text-yellow-400"
-                        : "text-rose-400"
-                    }`}
+                          ? "text-yellow-400"
+                          : "text-rose-400"
+                      }`}
                   >
                     {s.status}
                   </td>
@@ -368,9 +375,8 @@ const filteredSales = useMemo(() => {
               setPage(newPage);
               if (newPage < startPage) setPageWindow(pageWindow - 1);
             }}
-            className={`px-3 py-1 rounded-md border border-neutral-700 ${
-              page === 1 ? "text-neutral-500 cursor-not-allowed" : "text-yellow-400 hover:bg-neutral-900"
-            }`}
+            className={`px-3 py-1 rounded-md border border-neutral-700 ${page === 1 ? "text-neutral-500 cursor-not-allowed" : "text-yellow-400 hover:bg-neutral-900"
+              }`}
           >
             Prev
           </button>
@@ -379,9 +385,8 @@ const filteredSales = useMemo(() => {
             <button
               key={n}
               onClick={() => setPage(n)}
-              className={`px-3 py-1 rounded-md border border-neutral-700 ${
-                page === n ? "bg-yellow-500 text-black font-semibold" : "text-yellow-400 hover:bg-neutral-900"
-              }`}
+              className={`px-3 py-1 rounded-md border border-neutral-700 ${page === n ? "bg-yellow-500 text-black font-semibold" : "text-yellow-400 hover:bg-neutral-900"
+                }`}
             >
               {n}
             </button>
@@ -394,9 +399,8 @@ const filteredSales = useMemo(() => {
               setPage(newPage);
               if (newPage > endPage) setPageWindow(pageWindow + 1);
             }}
-            className={`px-3 py-1 rounded-md border border-neutral-700 ${
-              page === totalPages ? "text-neutral-500 cursor-not-allowed" : "text-yellow-400 hover:bg-neutral-900"
-            }`}
+            className={`px-3 py-1 rounded-md border border-neutral-700 ${page === totalPages ? "text-neutral-500 cursor-not-allowed" : "text-yellow-400 hover:bg-neutral-900"
+              }`}
           >
             Next
           </button>

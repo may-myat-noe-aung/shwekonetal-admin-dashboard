@@ -141,8 +141,7 @@ import {
   MessageCircleMore,
 } from "lucide-react";
 import { GoReport } from "react-icons/go";
-import Setting2Page from "../pages/SettingPage2";
-import SettingPage from "../pages/SettingPage";
+
 
 export default function Aside() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -194,7 +193,7 @@ export default function Aside() {
       roles: ["owner"],
     },
     {
-      label: "Setting",
+      label: "Setting2",
       icon: <Settings className="h-5 w-5" />,
       path: "/setting2",
       roles: ["manager", "seller"],

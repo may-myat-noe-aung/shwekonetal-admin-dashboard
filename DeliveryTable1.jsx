@@ -72,13 +72,7 @@ export default function DeliveryTable() {
       item.method?.toLowerCase().includes(term) ||
       item.type?.toLowerCase().includes(term) ||
       item.gold?.toString().includes(term) ||
-      item.status?.toLowerCase().includes(term) ||
-      item.fullname?.toLowerCase().includes(term) ||
-      item.seller?.toLowerCase().includes(term) ||
-      item.manager?.toLowerCase().includes(term) ||
-      item.service_fees?.toString().toLowerCase().includes(term) ||
-      item.deli_fees?.toString().toLowerCase().includes(term) ||
-      item.price?.toString().toLowerCase().includes(term);
+      item.status?.toLowerCase().includes(term);
       // date range filter
       const createdAt = new Date(item.created_at);
       const fromTime = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
@@ -255,12 +249,8 @@ export default function DeliveryTable() {
           <tr className="border-b border-neutral-800 text-neutral-500 text-center">
             {[
               { label: "User ID", key: "userid" },
-                  { label: "User Name", key: "name" },
-
               { label: "Seller", key: "seller" },
               { label: "Manager", key: "manager" },
-                { label: "Agent", key: "agent" },
-
               { label: "Gold", key: "gold" },
 
               { label: "Date", key: "date" },
@@ -312,25 +302,17 @@ export default function DeliveryTable() {
                 className="border-b border-neutral-800 hover:bg-neutral-800/50"
               >
                 <td className="py-2 px-3 text-center">{s.userid}</td>
-                <td className="py-2 px-3 text-center">{s.fullname}</td>
-
                 <td className="py-2 px-3 text-center">{s.seller || "-"}</td>
                 <td className="py-2 px-3 text-center">{s.manager || "-"}</td>
-                  <td className="py-2 px-3">{s.agent || "Normal"}</td>
-
 
                 <td className="py-2 px-3 text-center">{s.gold}</td>
 
                 <td className="py-2 px-3 text-center">
-                     {new Intl.DateTimeFormat("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    }).format(new Date(s.date || s.created_at))}
+                  {s.date.toLocaleDateString()}
                 </td>
-                <td className="py-2 px-3 text-center">{s.deli_fees || "-"} ကျပ်</td>
+                <td className="py-2 px-3 text-center">{s.deli_fees || "-"}</td>
                 <td className="py-2 px-3 text-center">
-                  {s.service_fees || "-"} ကျပ်
+                  {s.service_fees || "-"}
                 </td>
 
                 <td className="py-2 px-3 flex justify-center">
@@ -433,13 +415,7 @@ export default function DeliveryTable() {
                     </p>
                     <p>
                       <span className="text-neutral-400">Date -</span>{" "}
-                     {new Intl.DateTimeFormat("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    }).format(
-                      new Date(selectedTxn.date || selectedTxn.created_at)
-                    )}
+                      {selectedTxn.created_at.split(" ")[0]}
                     </p>
                     <p>
                       <span className="text-neutral-400">Time -</span>{" "}
@@ -459,10 +435,6 @@ export default function DeliveryTable() {
                         {selectedTxn.status || "-"}
                       </span>
                     </p>
-                               <p>
-                    <span className="text-neutral-400">Agent -</span>{" "}
-                    {selectedTxn.agent || "-"}
-                  </p>
                   </div>
                 </div>
 
@@ -504,7 +476,7 @@ export default function DeliveryTable() {
             </div>
 
             {/* --- Fees & Actions (only pending) --- */}
-            {/* {selectedTxn.status === "pending" && (
+            {selectedTxn.status === "pending" && (
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -570,7 +542,7 @@ export default function DeliveryTable() {
                   </button>
                 </div>
               </form>
-            )} */}
+            )}
 
             {/* --- Photos --- */}
             {selectedTxn.photos?.length > 0 && (

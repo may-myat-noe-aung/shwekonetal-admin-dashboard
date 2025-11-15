@@ -231,6 +231,7 @@ const BuyTransactions = ({ sales, updateStatus }) => {
                   <td className="py-2 px-3 whitespace-nowrap">
                     {s.price.toLocaleString()} ကျပ်
                   </td>
+
                   <td className="py-2 px-3 whitespace-nowrap">
                     {new Intl.DateTimeFormat("en-GB", {
                       day: "2-digit",
@@ -337,9 +338,6 @@ const BuyTransactions = ({ sales, updateStatus }) => {
           navigate={navigate}
         />
       )}
-
-
-
     </div>
   );
 };

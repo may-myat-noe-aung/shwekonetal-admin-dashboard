@@ -1,4 +1,3 @@
-
 import { createBrowserRouter } from "react-router-dom";
 import Layout from "./components/Layout";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -8,7 +7,6 @@ import DashboardPage from "./pages/DashboardPage";
 import SalePage from "./pages/SalePage";
 import GoldManagementPage from "./pages/GoldManagementPage";
 import SettingPage from "./pages/SettingPage";
-import Setting2Page from "./pages/SettingPage2"
 import UserManagementPage from "./pages/UserManagementPage";
 import ReportPage from "./pages/ReportPage";
 import ChatPage from "./pages/ChatPage";
@@ -18,8 +16,9 @@ import LoginPage from "./pages/LoginPage";
 
 import ProtectedRoute from "./ProtectedRoute";
 import { ROLES } from "./roles";
+import AdminSetting2 from "./components/Setting2/AdminSetting2";
 
-const currentUser = { role: localStorage.getItem("adminRole") || null };
+// const currentUser = { role: localStorage.getItem("adminRole") || null };
 
 const router = createBrowserRouter([
   // Auth routes
@@ -35,7 +34,7 @@ const router = createBrowserRouter([
       {
         index: true,
         element: (
-          <ProtectedRoute userRole={currentUser.role} allowedRoles={[ROLES.OWNER]}>
+          <ProtectedRoute allowedRoles={[ROLES.OWNER]}>
             <DashboardPage />
           </ProtectedRoute>
         ),
@@ -46,7 +45,6 @@ const router = createBrowserRouter([
         path: "sale",
         element: (
           <ProtectedRoute
-            userRole={currentUser.role}
             allowedRoles={[ROLES.OWNER, ROLES.MANAGER, ROLES.SELLER]}
           >
             <SalePage />
@@ -58,10 +56,7 @@ const router = createBrowserRouter([
       {
         path: "gold-management",
         element: (
-          <ProtectedRoute
-            userRole={currentUser.role}
-            allowedRoles={[ROLES.OWNER, ROLES.MANAGER]}
-          >
+          <ProtectedRoute allowedRoles={[ROLES.OWNER, ROLES.MANAGER]}>
             <GoldManagementPage />
           </ProtectedRoute>
         ),
@@ -71,10 +66,7 @@ const router = createBrowserRouter([
       {
         path: "user-management",
         element: (
-          <ProtectedRoute
-            userRole={currentUser.role}
-            allowedRoles={[ROLES.OWNER, ROLES.MANAGER]}
-          >
+          <ProtectedRoute allowedRoles={[ROLES.OWNER, ROLES.MANAGER]}>
             <UserManagementPage />
           </ProtectedRoute>
         ),
@@ -84,7 +76,7 @@ const router = createBrowserRouter([
       {
         path: "report",
         element: (
-          <ProtectedRoute userRole={currentUser.role} allowedRoles={[ROLES.OWNER]}>
+          <ProtectedRoute allowedRoles={[ROLES.OWNER]}>
             <ReportPage />
           </ProtectedRoute>
         ),
@@ -95,7 +87,6 @@ const router = createBrowserRouter([
         path: "chat",
         element: (
           <ProtectedRoute
-            userRole={currentUser.role}
             allowedRoles={[ROLES.OWNER, ROLES.MANAGER, ROLES.SELLER]}
           >
             <ChatPage />
@@ -107,7 +98,7 @@ const router = createBrowserRouter([
       {
         path: "setting",
         element: (
-          <ProtectedRoute userRole={currentUser.role} allowedRoles={[ROLES.OWNER]}>
+          <ProtectedRoute allowedRoles={[ROLES.OWNER]}>
             <SettingPage />
           </ProtectedRoute>
         ),
@@ -117,8 +108,8 @@ const router = createBrowserRouter([
       {
         path: "setting2",
         element: (
-          <ProtectedRoute userRole={currentUser.role} allowedRoles={[ROLES.MANAGER, ROLES.SELLER]}>
-            <Setting2Page />
+          <ProtectedRoute allowedRoles={[ROLES.MANAGER, ROLES.SELLER]}>
+            <AdminSetting2 />
           </ProtectedRoute>
         ),
       },

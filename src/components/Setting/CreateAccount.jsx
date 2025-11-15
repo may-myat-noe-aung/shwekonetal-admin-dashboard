@@ -357,46 +357,51 @@ export default function CreateAccount() {
         </div>
       </div>
 
-      {/* Passcode Modal (unchanged) */}
-      {showPasscodeModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 relative">
-            <button
-              onClick={() => setShowPasscodeModal(false)}
-              className="absolute top-2 right-2 text-neutral-400 hover:text-white"
-            >
-              <X size={18} />
-            </button>
+{/* Passcode Modal  */}
+{showPasscodeModal && (
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 relative">
+      <button
+        onClick={() => setShowPasscodeModal(false)}
+        className="absolute top-2 right-2 text-neutral-400 hover:text-white"
+      >
+        <X size={18} />
+      </button>
 
-            <h3 className="text-lg font-semibold mb-4 text-center">
-              Enter Owner Passcode
-            </h3>
+      <h3 className="text-lg font-semibold mb-4 text-center">
+        Enter Owner Passcode
+      </h3>
 
-            <input
-              type="password"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              placeholder="Enter passcode"
-              className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
-            />
+      <input
+        type="password"
+        ref={(input) => input && input.focus()} // Auto-focus on open
+        value={passcode}
+        onChange={(e) => setPasscode(e.target.value)}
+        placeholder="Enter passcode"
+        className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") handlePasscodeConfirm(); // Enter → Confirm
+        }}
+      />
 
-            <div className="flex justify-between">
-              <button
-                onClick={() => setShowPasscodeModal(false)}
-                className="bg-neutral-700 text-white px-3 py-2 rounded-md text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePasscodeConfirm}
-                className="bg-yellow-500 text-black px-3 py-2 rounded-md text-sm"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="flex justify-between">
+        <button
+          onClick={() => setShowPasscodeModal(false)} // Cancel closes modal immediately
+          className="bg-neutral-700 text-white px-3 py-2 rounded-md text-sm"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handlePasscodeConfirm}
+          className="bg-yellow-500 text-black px-3 py-2 rounded-md text-sm"
+        >
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

@@ -32,12 +32,13 @@ export default function NotFoundPage() {
         </div>
 
         <p className="text-xs text-neutral-500 mt-8">
-          If you believe this is an error, please contact support.
+          {/* If you believe this is an error, please contact support. */}
         </p>
       </div>
     </div>
   );
 }
+
 // import React from "react";
 // import { useNavigate } from "react-router-dom";
 // import { motion } from "framer-motion";

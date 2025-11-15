@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Padauk:wght@400;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Padauk:wght@400;700&display=swap");
 
 /* Custom scroll for chat container */
 .custom-scroll::-webkit-scrollbar {
@@ -15,9 +15,9 @@
 
 .custom-scroll::-webkit-scrollbar-thumb {
   background-color: #facc15; /* yellow-500 thumb */
-  border-radius: 9999px;      /* fully rounded */
-  border: 1px solid #1f2937;  /* track border effect */
-  min-height: 30px;           /* ensures thumb isn't too short */
+  border-radius: 9999px; /* fully rounded */
+  border: 1px solid #1f2937; /* track border effect */
+  min-height: 30px; /* ensures thumb isn't too short */
 }
 
 .custom-scroll::-webkit-scrollbar-thumb:hover {
@@ -41,9 +41,9 @@
 
 .custom-scroll::-webkit-scrollbar-thumb {
   background-color: #facc15; /* yellow thumb */
-  border-radius: 9999px;      /* fully rounded */
-  border: 1px solid #1f2937;  /* track border effect */
-  min-height: 30px;           /* prevents tiny thumb */
+  border-radius: 9999px; /* fully rounded */
+  border: 1px solid #1f2937; /* track border effect */
+  min-height: 30px; /* prevents tiny thumb */
 }
 
 .custom-scroll::-webkit-scrollbar-thumb:hover {
@@ -54,4 +54,50 @@
 .custom-scroll {
   scrollbar-width: thin;
   scrollbar-color: #facc15 #1f2937;
+}
+
+select::-webkit-scrollbar {
+  display: none;
+}
+
+/* in your global css */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Hide scrollbar for all browsers */
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hidden {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hidden {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }

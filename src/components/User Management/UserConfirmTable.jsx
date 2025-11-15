@@ -35,7 +35,8 @@ export default function UserConfirmTable() {
         const res = await fetch("http://38.60.244.74:3000/users");
         if (!res.ok) throw new Error("Failed to fetch users");
         const data = await res.json();
-        setUsers(data);
+       setUsers(data.users || []);
+
       } catch (err) {
         console.error("Error fetching users:", err);
         alert("Cannot load user data ❌");
@@ -72,9 +73,9 @@ export default function UserConfirmTable() {
     <div className="bg-neutral-900 p-6 rounded-2xl shadow-lg w-full">
       <h2 className="text-xl font-semibold mb-4 text-white">User Confirm</h2>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-hidden">
         <table className="min-w-full text-sm text-left text-white/80">
-          <thead className="bg-neutral-800/70 text-white">
+          <thead className="border-b border-neutral-600 text-white">
             <tr>
               {[
                 "Photo",

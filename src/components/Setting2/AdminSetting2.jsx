@@ -14,7 +14,7 @@ import SecurityTab from "../Setting/SecurityTab";
 import EditAccountTab from "../Setting/EditAccountTab";
 import ManagerSellerList from "../Setting/ManagerSellerList";
 
-export default function AdminSettings() {
+export default function AdminSetting2() {
   const [activeTab, setActiveTab] = useState("overview");
   const [account, setAccount] = useState(null); // fetched admin data
   const [security, setSecurity] = useState({
