@@ -648,6 +648,13 @@ export default function UserTableWithSummary() {
           newUsers={newUsersApiCount} // ✅ use API new_users
         />
 
+                {/* Confirm Modal */}
+        <UserConfirmTable
+          viewUser={viewUser}
+          onClose={() => setViewUser(null)}
+          handleAction={handleAction}
+        />
+
         <div className="bg-neutral-900 p-6 rounded-2xl shadow-lg w-full">
           {/* Filters */}
           <div className="">
@@ -875,12 +882,7 @@ export default function UserTableWithSummary() {
 
         <AgentTable />
 
-        {/* Confirm Modal */}
-        <UserConfirmTable
-          viewUser={viewUser}
-          onClose={() => setViewUser(null)}
-          handleAction={handleAction}
-        />
+
 
         {/* Photo Preview Modal */}
         {previewPhoto && (
