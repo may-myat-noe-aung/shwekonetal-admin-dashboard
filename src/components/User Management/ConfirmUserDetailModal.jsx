@@ -522,7 +522,7 @@ export default function ConfirmUserDetailModal({
           {/* Info Grid */}
           <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-white/80 text-sm mb-6">
             <div>
-              <p className="text-white/500 mb-1 text-xs">ID Type</p>
+              <p className="text-white/500 mb-1 text-xs ">ID Type</p>
               <p>{viewUser.id_type}</p>
             </div>
             <div>

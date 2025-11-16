@@ -16,7 +16,7 @@ export default function SellTable() {
   const [page, setPage] = useState(1);
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [previewImg, setPreviewImg] = useState(null);
-
+ 
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
@@ -116,7 +116,7 @@ export default function SellTable() {
   // Export EXCEL
   const handleExport = async () => {
     try {
-      const res = await fetch("http://38.60.244.74:3000/sales");
+      const res = await fetch("http://38.60.244.74:3000/sellTable");
       const data = await res.json();
 
       if (!data.success && !Array.isArray(data.data)) {
@@ -130,19 +130,43 @@ export default function SellTable() {
         .filter((s) => {
           // search (fullname, id_number, email)
           const text =
-            `${s.fullname} ${s.userid} ${s.price} ${s.status} ${s.method}`.toLowerCase();
+            `${s.fullname} ${s.userid} ${s.agent ? s.agent : 'Normal'} ${s.price} ${s.status} ${s.method}`.toLowerCase();
           const matchesSearch = searchTerm
             ? text.includes(searchTerm.toLowerCase())
             : true;
 
           // date range filter
           const createdAt = new Date(s.created_at);
-          const fromTime = fromDate ? new Date(fromDate).getTime() : null;
-          const toTime = toDate ? new Date(toDate).getTime() + 86399999 : null;
+          const fromTime = fromDate
+            ? new Date(fromDate).setHours(0, 0, 0, 0)
+            : null;
+          const toTime = toDate
+            ? new Date(toDate).setHours(23, 59, 59, 999)
+            : null;
 
-          const matchesDate =
-            (!fromTime || createdAt.getTime() >= fromTime) &&
-            (!toTime || createdAt.getTime() <= toTime);
+          let matchesDate = false;
+
+          if (fromTime && toTime) {
+            // ✅ Range filter
+            matchesDate =
+              createdAt.getTime() >= fromTime && createdAt.getTime() <= toTime;
+          } else if (fromTime || toTime) {
+            // ✅ Only one date → one-day filter
+            const singleDate = new Date(fromTime || toTime);
+            const startOfDay = new Date(
+              singleDate.setHours(0, 0, 0, 0)
+            ).getTime();
+            const endOfDay = new Date(
+              singleDate.setHours(23, 59, 59, 999)
+            ).getTime();
+
+            matchesDate =
+              createdAt.getTime() >= startOfDay &&
+              createdAt.getTime() <= endOfDay;
+          } else {
+            // ✅ No date filters → show all
+            matchesDate = true;
+          }
 
           return matchesSearch && matchesDate;
         });
@@ -159,6 +183,7 @@ export default function SellTable() {
         Name: item.fullname,
         Seller: item.seller,
         Manager: item.manager,
+        Agent: item.agent,
         Type: item.type,
         Gold: item.gold,
         Price: `${item.price.toLocaleString()} ကျပ်`,
@@ -257,7 +282,7 @@ export default function SellTable() {
             <tr className="border-b border-neutral-800 text-neutral-500">
               {[
                 { label: "User ID", key: "userid" },
-                { label: "User Name", key: "name" },
+                { label: "User Name", key: "fullname" },
                 { label: "Seller", key: "seller" },
                 { label: "Manager", key: "manager" },
                 { label: "Agent", key: "agent" },

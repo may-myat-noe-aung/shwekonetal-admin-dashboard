@@ -3,6 +3,9 @@ import { Search, Download, ChevronUp, ChevronDown, Info } from "lucide-react";
 
 const API_BASE = "http://38.60.244.74:3000";
 
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+
 export default function DeliveryTable() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,131 +77,154 @@ export default function DeliveryTable() {
       item.gold?.toString().includes(term) ||
       item.status?.toLowerCase().includes(term) ||
       item.fullname?.toLowerCase().includes(term) ||
-      item.seller?.toLowerCase().includes(term) ||
+      (item.agent
+        ? item.agent.toLowerCase().includes(term)
+        : "normal".includes(term));
+    item.seller?.toLowerCase().includes(term) ||
       item.manager?.toLowerCase().includes(term) ||
       item.service_fees?.toString().toLowerCase().includes(term) ||
       item.deli_fees?.toString().toLowerCase().includes(term) ||
       item.price?.toString().toLowerCase().includes(term);
-      // date range filter
-      const createdAt = new Date(item.created_at);
-      const fromTime = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
-      const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
+    // date range filter
+    const createdAt = new Date(item.created_at);
+    const fromTime = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
+    const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
 
-      let matchesDate = false;
+    let matchesDate = false;
 
-      if (fromTime && toTime) {
-        // ✅ Range filter
-        matchesDate =
-          createdAt.getTime() >= fromTime && createdAt.getTime() <= toTime;
-      } else if (fromTime || toTime) {
-        // ✅ Only one date → one-day filter
-        const singleDate = new Date(fromTime || toTime);
-        const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
-        const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
+    if (fromTime && toTime) {
+      // ✅ Range filter
+      matchesDate =
+        createdAt.getTime() >= fromTime && createdAt.getTime() <= toTime;
+    } else if (fromTime || toTime) {
+      // ✅ Only one date → one-day filter
+      const singleDate = new Date(fromTime || toTime);
+      const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
+      const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
 
-        matchesDate =
-          createdAt.getTime() >= startOfDay && createdAt.getTime() <= endOfDay;
-      } else {
-        // ✅ No date filters → show all
-        matchesDate = true;
-      }
+      matchesDate =
+        createdAt.getTime() >= startOfDay && createdAt.getTime() <= endOfDay;
+    } else {
+      // ✅ No date filters → show all
+      matchesDate = true;
+    }
 
     return matchesSearch && matchesDate;
   });
 
   // Export EXCEL
   const handleExport = async () => {
-      try {
-        const res = await fetch("http://38.60.244.74:3000/sales");
-        const data = await res.json();
-        
-        if (!data.success && !Array.isArray(data.data)) {
-          alert("No data found to export.");
-          return;
-        }
-  
-        // frontend filter logic (search + date)
-        const filtered = data.data
-          .filter((s) => ["delivery"].includes(s.type?.toLowerCase()))
-          .filter((s) => {
-            // search (fullname, id_number, email)
-            const text = `${s.fullname} ${s.userid} ${s.deli_fees} ${s.seller} ${s.manager} ${s.service_fees}`.toLowerCase();
-            const matchesSearch = searchTerm
+    try {
+      const res = await fetch("http://38.60.244.74:3000/deliTable");
+      const data = await res.json();
+
+      if (!data.success && !Array.isArray(data.data)) {
+        alert("No data found to export.");
+        return;
+      }
+
+      // frontend filter logic (search + date)
+      const filtered = data.data
+        .filter((s) => ["delivery"].includes(s.type?.toLowerCase()))
+        .filter((s) => {
+          // search (fullname, id_number, email)
+          const text = `${s.fullname} ${s.userid} ${s.deli_fees} ${
+            s.agent ? s.agent : "Normal"
+          } ${s.seller} ${s.manager} ${s.service_fees}`.toLowerCase();
+          const matchesSearch = searchTerm
             ? text.includes(searchTerm.toLowerCase())
             : true;
-  
-            // date range filter
-            const createdAt = new Date(s.created_at);
-            const fromTime = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
-            const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
-  
-            let matchesDate = false;
-  
-            if (fromTime && toTime) {
-              // ✅ Range filter
-              matchesDate =
-                createdAt.getTime() >= fromTime && createdAt.getTime() <= toTime;
-            } else if (fromTime || toTime) {
-              // ✅ Only one date → one-day filter
-              const singleDate = new Date(fromTime || toTime);
-              const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
-              const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
-  
-              matchesDate =
-                createdAt.getTime() >= startOfDay && createdAt.getTime() <= endOfDay;
-            } else {
-              // ✅ No date filters → show all
-              matchesDate = true;
-            }
-  
-            return matchesSearch && matchesDate;
-          });
-  
-        if (filtered.length === 0) {
-          alert("No matching data to export.");
-          return;
-        }
-  
-        // convert to excel
-        const exportData = filtered.map((item, count) => ({
-          ID: String(count + 1),
-          UserID: item.userid,
-          Name: item.fullname,
-          Seller: item.seller,
-          Manager: item.manager,
-          Type: item.type,
-          Gold: item.gold,
-          Delivery_Fees: `${item.deli_fees ? item.deli_fees.toLocaleString() : '-'} ကျပ်`,
-          Server_Fees: `${item.services_fees ? item.deli_fees.toLocaleString() : '-'} ကျပ်`,
-          Phone: item.payment_phone,
-          Address: item.address,
-          Delivery_Type: item.deli_type,
-          Status: item.status,
-          Date: new Date(item.created_at).toLocaleDateString(),
-          Time: new Date(item.created_at).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          }),
-        }));
-  
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Delivery Sales");
-  
-        const excelBuffer = XLSX.write(workbook, {
-          bookType: "xlsx",
-          type: "array",
+
+          // date range filter
+          const createdAt = new Date(s.created_at);
+          const fromTime = fromDate
+            ? new Date(fromDate).setHours(0, 0, 0, 0)
+            : null;
+          const toTime = toDate
+            ? new Date(toDate).setHours(23, 59, 59, 999)
+            : null;
+
+          let matchesDate = false;
+
+          if (fromTime && toTime) {
+            // ✅ Range filter
+            matchesDate =
+              createdAt.getTime() >= fromTime && createdAt.getTime() <= toTime;
+          } else if (fromTime || toTime) {
+            // ✅ Only one date → one-day filter
+            const singleDate = new Date(fromTime || toTime);
+            const startOfDay = new Date(
+              singleDate.setHours(0, 0, 0, 0)
+            ).getTime();
+            const endOfDay = new Date(
+              singleDate.setHours(23, 59, 59, 999)
+            ).getTime();
+
+            matchesDate =
+              createdAt.getTime() >= startOfDay &&
+              createdAt.getTime() <= endOfDay;
+          } else {
+            // ✅ No date filters → show all
+            matchesDate = true;
+          }
+
+          return matchesSearch && matchesDate;
         });
-        const blob = new Blob([excelBuffer], {
-          type: "application/octet-stream",
-        });
-  
-        saveAs(blob, "Delivery Sales.xlsx");
-      } catch (error) {
-        console.error("Export error:", error);
+
+      if (filtered.length === 0) {
+        alert("No matching data to export.");
+        return;
       }
-    };
+
+      // convert to excel
+      const exportData = filtered.map((item, count) => ({
+        ID: String(count + 1),
+        UserID: item.userid,
+        Name: item.fullname,
+        Seller: item.seller,
+        Manager: item.manager,
+        Agent: item.agent ? item.agent : "Normal",
+        Type: item.type,
+        Gold: item.gold,
+        Delivery_Fees: `${
+          item.deli_fees ? item.deli_fees.toLocaleString() : "-"
+        } ကျပ်`,
+        Server_Fees: `${
+          item.services_fees ? item.deli_fees.toLocaleString() : "-"
+        } ကျပ်`,
+        Phone: item.payment_phone,
+        Address: item.address,
+        Delivery_Type: item.deli_type,
+        Status: item.status,
+        Date: new Date(item.created_at).toLocaleDateString(),
+        Time: new Date(item.created_at).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        "Delivery Sales Report"
+      );
+
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+      });
+      const blob = new Blob([excelBuffer], {
+        type: "application/octet-stream",
+      });
+
+      saveAs(blob, "Delivery Sales Report.xlsx");
+    } catch (error) {
+      console.error("Export error:", error);
+    }
+  };
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = filteredData.slice(
@@ -225,7 +251,8 @@ export default function DeliveryTable() {
             </div>
             <button
               onClick={handleExport}
-              className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white">
+              className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
+            >
               <Download size={14} /> Export
             </button>
           </div>
@@ -255,18 +282,14 @@ export default function DeliveryTable() {
           <tr className="border-b border-neutral-800 text-neutral-500 text-center">
             {[
               { label: "User ID", key: "userid" },
-                  { label: "User Name", key: "name" },
-
+              { label: "User Name", key: "fullname" },
               { label: "Seller", key: "seller" },
               { label: "Manager", key: "manager" },
-                { label: "Agent", key: "agent" },
-
+              { label: "Agent", key: "agent" },
               { label: "Gold", key: "gold" },
-
               { label: "Date", key: "date" },
               { label: "Delivery Fees", key: "deli_fees" },
               { label: "Service Fees", key: "service_fees" },
-
 
               { label: "Details", key: "details" },
             ].map((col) => (
@@ -316,19 +339,20 @@ export default function DeliveryTable() {
 
                 <td className="py-2 px-3 text-center">{s.seller || "-"}</td>
                 <td className="py-2 px-3 text-center">{s.manager || "-"}</td>
-                  <td className="py-2 px-3">{s.agent || "Normal"}</td>
-
+                <td className="py-2 px-3">{s.agent || "Normal"}</td>
 
                 <td className="py-2 px-3 text-center">{s.gold}</td>
 
                 <td className="py-2 px-3 text-center">
-                     {new Intl.DateTimeFormat("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    }).format(new Date(s.date || s.created_at))}
+                  {new Intl.DateTimeFormat("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  }).format(new Date(s.date || s.created_at))}
                 </td>
-                <td className="py-2 px-3 text-center">{s.deli_fees || "-"} ကျပ်</td>
+                <td className="py-2 px-3 text-center">
+                  {s.deli_fees || "-"} ကျပ်
+                </td>
                 <td className="py-2 px-3 text-center">
                   {s.service_fees || "-"} ကျပ်
                 </td>
@@ -433,13 +457,13 @@ export default function DeliveryTable() {
                     </p>
                     <p>
                       <span className="text-neutral-400">Date -</span>{" "}
-                     {new Intl.DateTimeFormat("en-GB", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      year: "numeric",
-                    }).format(
-                      new Date(selectedTxn.date || selectedTxn.created_at)
-                    )}
+                      {new Intl.DateTimeFormat("en-GB", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      }).format(
+                        new Date(selectedTxn.date || selectedTxn.created_at)
+                      )}
                     </p>
                     <p>
                       <span className="text-neutral-400">Time -</span>{" "}
@@ -459,10 +483,10 @@ export default function DeliveryTable() {
                         {selectedTxn.status || "-"}
                       </span>
                     </p>
-                               <p>
-                    <span className="text-neutral-400">Agent -</span>{" "}
-                    {selectedTxn.agent || "-"}
-                  </p>
+                    <p>
+                      <span className="text-neutral-400">Agent -</span>{" "}
+                      {selectedTxn.agent || "-"}
+                    </p>
                   </div>
                 </div>
 

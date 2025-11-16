@@ -91,8 +91,8 @@ export default function TransactionPopup({
 
       alert(
         type === "approve"
-          ? "✅ Transaction approved successfully!"
-          : "🚫 Transaction rejected successfully!"
+          ? " Transaction approved successfully!"
+          : " Transaction rejected successfully!"
       );
     } catch {
       alert("❌ Failed to process transaction");
@@ -440,24 +440,23 @@ export default function TransactionPopup({
           )}
 
           {/* --- Photos --- */}
-     {txn.type !== "sell" && (
-  <div className="flex gap-2 mb-6 overflow-x-auto overflow-y-hidden scrollbar-none">
-    {txn.photos?.map((fileName, idx) => (
-      <img
-        key={idx}
-        src={`http://38.60.244.74:3000/uploads/${fileName}`}
-        alt={`Photo ${idx + 1}`}
-        onClick={() =>
-          setLocalPreviewImg(
-            `http://38.60.244.74:3000/uploads/${fileName}`
-          )
-        }
-        className="cursor-pointer rounded-lg border border-neutral-700 hover:scale-105 transition w-36 h-48 object-cover flex-shrink-0"
-      />
-    ))}
-  </div>
-)}
-
+          {txn.type !== "sell" && (
+            <div className="flex gap-2 mb-6 overflow-x-auto overflow-y-hidden scrollbar-none">
+              {txn.photos?.map((fileName, idx) => (
+                <img
+                  key={idx}
+                  src={`http://38.60.244.74:3000/uploads/${fileName}`}
+                  alt={`Photo ${idx + 1}`}
+                  onClick={() =>
+                    setLocalPreviewImg(
+                      `http://38.60.244.74:3000/uploads/${fileName}`
+                    )
+                  }
+                  className="cursor-pointer rounded-lg border border-neutral-700 hover:scale-105 transition w-36 h-48 object-cover flex-shrink-0"
+                />
+              ))}
+            </div>
+          )}
 
           {/* --- Buttons --- */}
           <div className="flex justify-end gap-3">

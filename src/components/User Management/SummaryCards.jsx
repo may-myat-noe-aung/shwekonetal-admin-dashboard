@@ -23,7 +23,7 @@ const SummaryCard = ({ title, value = 0, icon, accent }) => (
   </div>
 );
 
-export default function SummaryCards({ total, approved, rejected, newUsers }) {
+export default function SummaryCards({ total, approved, pending, newUsers }) {
   return (
     <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <SummaryCard
@@ -38,12 +38,13 @@ export default function SummaryCards({ total, approved, rejected, newUsers }) {
         icon={<ArrowUpRight className="h-5 w-5" />}
         accent="from-emerald-500/20 to-transparent"
       />
-      <SummaryCard
-        title="Rejected"
-        value={rejected}
-        icon={<Filter className="h-5 w-5" />}
-        accent="from-rose-500/20 to-transparent"
-      />
+   <SummaryCard
+  title="Pending"
+  value={pending}
+  icon={<Filter className="h-5 w-5" />}
+  accent="from-yellow-400/20 to-transparent"
+/>
+
       <SummaryCard
         title="New Users Today"
         value={newUsers}

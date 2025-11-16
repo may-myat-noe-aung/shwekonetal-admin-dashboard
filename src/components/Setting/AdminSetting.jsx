@@ -18,7 +18,6 @@ export default function AdminSettings() {
   });
 
   const [quickActions] = useState([
-    { icon: <Download className="h-4 w-4" />, label: "Export Data" },
     { icon: <Shield className="h-4 w-4" />, label: "Security", action:"security" },
     { icon: <User className="h-4 w-4" />, label: "Register New Account", action: "create" },
   ]);
@@ -71,7 +70,7 @@ export default function AdminSettings() {
   ];
 
   return (
-    <div className="bg-neutral-950 text-neutral-100 p-4  md:h-[8.5vh] xl:h-[90vh] mx-auto max-w-6xl overflow-hidden">
+    <div className="bg-neutral-950 text-neutral-100 p-4  md:h-[8.5vh] xl:h-[90vh] mx-auto max-w-7xl overflow-hidden">
       {/* Horizontal Tabs */}
       <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-4 mb-6">
         <div className="flex space-x-2 overflow-x-auto">

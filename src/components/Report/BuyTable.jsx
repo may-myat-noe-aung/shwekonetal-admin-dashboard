@@ -125,7 +125,7 @@ export default function BuyTable() {
 
   const handleExport = async () => {
     try {
-      const res = await fetch("http://38.60.244.74:3000/sales");
+      const res = await fetch("http://38.60.244.74:3000/buyTable");
       const data = await res.json();
 
       if (!data.success && !Array.isArray(data.data)) {
@@ -139,7 +139,7 @@ export default function BuyTable() {
         .filter((s) => {
           // search (fullname, id_number, email)
           const text =
-            `${s.fullname} ${s.userid} ${s.seller} ${s.manager} ${s.price} ${s.method}`.toLowerCase();
+            `${s.fullname} ${s.userid} ${s.seller} ${s.agent ? s.agent : 'Normal'} ${s.manager} ${s.price} ${s.method}`.toLowerCase();
           const matchesSearch = searchTerm
             ? text.includes(searchTerm.toLowerCase())
             : true;
@@ -192,6 +192,7 @@ export default function BuyTable() {
         Name: item.fullname,
         Seller: item.seller,
         Manager: item.manager,
+        Agent: item.agent ? item.agent : 'Normal',
         Type: item.type,
         Gold: item.gold,
         Price: `${item.price.toLocaleString()} ကျပ်`,
@@ -231,6 +232,10 @@ export default function BuyTable() {
     const matchesSearch =
       item.userid?.toLowerCase().includes(term) ||
       item.fullname?.toLowerCase().includes(term) ||
+      (item.agent
+        ? item.agent.toLowerCase().includes(term)
+        : "normal".includes(term)
+      )
       item.seller?.toLowerCase().includes(term) ||
       item.manager?.toLowerCase().includes(term) ||
       item.price?.toString().toLowerCase().includes(term) ||
@@ -342,11 +347,10 @@ export default function BuyTable() {
           <tr className="border-b border-neutral-800 text-neutral-500">
             {[
               { label: "User ID", key: "userid" },
-              { label: "User Name", key: "name" },
+              { label: "User Name", key: "fullname" },
               { label: "Seller", key: "seller" },
               { label: "Manager", key: "manager" },
               { label: "Agent", key: "agent" },
-
               { label: "Gold", key: "gold" },
               { label: "Price", key: "price" },
               { label: "Date", key: "date" },

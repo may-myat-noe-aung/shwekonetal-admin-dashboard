@@ -64,7 +64,7 @@ export default function ReportManagement() {
     try {
       // 🟡 Step 1: Verify passcode
       const verifyRes = await fetch(
-        "http://38.60.244.74:3000/admin/verify-admin-passcode",
+        "http://38.60.244.74:3000/admin/verify-owner-passcode",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -124,7 +124,7 @@ export default function ReportManagement() {
     try {
       // --- Verify passcode dynamically ---
       const verifyResponse = await axios.post(
-        "http://38.60.244.74:3000/admin/verify-admin-passcode",
+        "http://38.60.244.74:3000/admin/verify-owner-passcode",
         { passcode: password }
       );
 
@@ -188,7 +188,6 @@ export default function ReportManagement() {
     // Fetch immediately
     fetchGold();
 
-    // Fetch every 1 second
     interval = setInterval(fetchGold, 500);
 
     // Cleanup on unmount

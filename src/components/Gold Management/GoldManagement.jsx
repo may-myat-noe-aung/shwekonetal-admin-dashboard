@@ -208,13 +208,14 @@ export default function GoldManagementPage() {
         {/* Buy + Sell Charts */}
         <section className="">
           {/* Buy */}
+          {/* Buy */}
           <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
             <div className="col-span-1 md:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 2xl:py-6 w-full">
               <h3 className="mb-6 font-semibold text-sm md:text-base">
                 Latest Buy Price
               </h3>
               <div className="flex flex-col gap-4">
-                <div className="w-full ">
+                <div className="w-full">
                   <SummaryCard
                     title="Buy Price"
                     value={`${buyPrice} ကျပ်`}
@@ -223,24 +224,21 @@ export default function GoldManagementPage() {
                     accent="from-green-500/20 to-transparent"
                   />
                 </div>
-                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2">
+                <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 w-full">
                   <input
                     type="number"
                     value={buyInput}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setBuyInput(value === "" ? "" : Number(value));
-                    }}
+                    onChange={(e) =>
+                      setBuyInput(
+                        e.target.value === "" ? "" : Number(e.target.value)
+                      )
+                    }
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleUpdateClick("buy"); // <-- CORRECT function
-                      }
+                      if (e.key === "Enter") handleUpdateClick("buy");
                     }}
                     className="rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm flex-1 w-full"
                     placeholder="Buy Price"
                   />
-
                   <button
                     onClick={() => handleUpdateClick("buy")}
                     className="bg-green-500 text-white px-3 py-2 rounded-md text-sm w-full sm:w-auto"
@@ -250,10 +248,9 @@ export default function GoldManagementPage() {
                 </div>
               </div>
             </div>
-            <div className="col-span-1 md:col-span-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 ">
+            <div className="col-span-1 md:col-span-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 overflow-x-auto">
               <h3 className="font-semibold mb-3">Buy Price & Chart</h3>
-
-              <div className="h-48 w-full">
+              <div className="h-48 w-full min-w-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartBuyData}>
                     <defs>
@@ -272,7 +269,7 @@ export default function GoldManagementPage() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                     <XAxis dataKey="time" stroke="#a3a3a3" />
-                    <YAxis stroke="#a3a3a3" width={100} />
+                    <YAxis stroke="#a3a3a3" width={60} />
                     <Tooltip
                       formatter={(value) => [`${value} ကျပ်`, "Buy Price"]}
                       contentStyle={{
@@ -294,7 +291,7 @@ export default function GoldManagementPage() {
 
           {/* Sell */}
           <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center mt-6 ">
-            <div className="col-span-1 md:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 2xl:py-6  w-full">
+            <div className="col-span-1 md:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 2xl:py-6 w-full">
               <h3 className="mb-6 font-semibold text-sm md:text-base">
                 Latest Sell Price
               </h3>

@@ -2,11 +2,14 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Search, Download, ChevronUp, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+
 export default function RecentTransactions() {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState({
-    key: "date",
+    key: "time",
     direction: "desc",
   });
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,16 +18,41 @@ export default function RecentTransactions() {
   const navigate = useNavigate();
 
   // 🔹 Fetch data from API
+  // useEffect(() => {
+  //   const fetchSales = async () => {
+  //     try {
+  //       const res = await fetch("http://38.60.244.74:3000/approve");
+  //       const data = await res.json();
+  //       if (data.success && Array.isArray(data.data)) {
+  //         // Ensure time is parsed into Date object
+  //         const formatted = data.data.map((item) => ({
+  //           ...item,
+  //           time: new Date(item.time),
+  //         }));
+  //         setSales(formatted);
+  //       } else {
+  //         setSales([]);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching sales:", error);
+  //       setSales([]);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchSales();
+  // }, []);
   useEffect(() => {
+  const timer = setTimeout(() => {
+    // 🔹 original fetch function ကို 500ms delay နဲ့ run
     const fetchSales = async () => {
       try {
         const res = await fetch("http://38.60.244.74:3000/approve");
         const data = await res.json();
         if (data.success && Array.isArray(data.data)) {
-          // Ensure date is parsed into Date object
           const formatted = data.data.map((item) => ({
             ...item,
-            date: new Date(item.date),
+            time: new Date(item.time),
           }));
           setSales(formatted);
         } else {
@@ -37,8 +65,13 @@ export default function RecentTransactions() {
         setLoading(false);
       }
     };
+
     fetchSales();
-  }, []);
+  }, 500);
+
+  return () => clearTimeout(timer); // cleanup
+}, []);
+
 
   // 🔹 Filtered Sales
   const filteredSales = useMemo(() => {
@@ -47,12 +80,68 @@ export default function RecentTransactions() {
         s.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.userid?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.fullname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.seller?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.manager?.toLowerCase().includes(searchTerm.toLowerCase())
+        s.manager?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.status?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [sales, searchTerm]);
+
+  // Export EXCEL
+  const handleExport = async () => {
+    try {
+      const res = await fetch("http://38.60.244.74:3000/approve");
+      const data = await res.json();
+
+      if (data.success && Array.isArray(data.data)) {
+        const exportData = data.data
+          .filter((item) => {
+            const text =
+              `${item.fullname}  ${item.userid} ${item.seller} ${item.manager} ${item.type} ${item.price} ${item.status} ${item.method}`.toLowerCase();
+            return searchTerm ? text.includes(searchTerm.toLowerCase()) : true;
+          })
+          .map((item, count) => ({
+            ID: String(count + 1),
+            UserID: item.userid,
+            Name: item.fullname,
+            Seller: item.seller || "-",
+            Manager: item.manager || "-",
+            Type: item.type,
+            Gold: item.gold,
+            Price: `${item.price.toLocaleString()} ကျပ်`,
+            Date: new Date(item.created_at).toLocaleString(),
+            Time: new Date(item.created_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            }),
+            Status: item.status,
+          }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(
+          workbook,
+          worksheet,
+          "Approved_Transactions_today"
+        );
+
+        const excelBuffer = XLSX.write(workbook, {
+          bookType: "xlsx",
+          type: "array",
+        });
+        const blob = new Blob([excelBuffer], {
+          type: "application/octet-stream",
+        });
+
+        saveAs(blob, "Approved_Transactions_today.xlsx");
+      } else {
+        alert("No data found to export.");
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+    }
+  };
 
   // 🔹 Sorting
   const sortedSales = useMemo(() => {
@@ -115,7 +204,10 @@ export default function RecentTransactions() {
               type="text"
             />
           </div>
-          <button className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white">
+          <button
+            onClick={handleExport}
+            className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
+          >
             <Download size={14} /> Export
           </button>
         </div>
@@ -128,12 +220,13 @@ export default function RecentTransactions() {
             {[
               { label: "User ID", key: "userid" },
               { label: "Customer", key: "fullname" },
+              { label: "Seller", key: "seller" },
+              { label: "Manager", key: "manager" },
               { label: "Type", key: "type" },
               { label: "Gold", key: "gold" },
               { label: "Price", key: "price" },
-              { label: "Date", key: "date" },
-              { label: "Seller", key: "seller" },
-              { label: "Manager", key: "manager" },
+              { label: "Time", key: "created_at" },
+
               { label: "Status", key: "status" },
             ].map((col) => (
               <th
@@ -162,7 +255,7 @@ export default function RecentTransactions() {
           {paginatedSales.length === 0 ? (
             <tr className="h-[200px]">
               <td colSpan={9} className="text-center py-10 text-neutral-500">
-                No approved transactions found.
+                No approved transactions for today found.
               </td>
             </tr>
           ) : (
@@ -173,6 +266,8 @@ export default function RecentTransactions() {
               >
                 <td className="py-2 px-3 text-center">{s.userid}</td>
                 <td className="py-2 px-3 text-center">{s.fullname}</td>
+                <td className="py-2 px-3 text-center">{s.seller || "-"}</td>
+                <td className="py-2 px-3 text-center">{s.manager || "-"}</td>
                 <td
                   className={`py-2 px-3 text-center capitalize font-semibold ${
                     s.type === "buy"
@@ -197,11 +292,16 @@ export default function RecentTransactions() {
                 </td>
 
                 <td className="py-2 px-3 text-center">
-                  {s.created_at ? s.created_at.split(" ")[0] : "-"}
+                  {s.created_at
+                    ? new Date(s.created_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: true,
+                      })
+                    : "-"}
                 </td>
 
-                <td className="py-2 px-3 text-center">{s.seller || "-"}</td>
-                <td className="py-2 px-3 text-center">{s.manager || "-"}</td>
                 <td
                   className={`py-2 px-3 text-center capitalize font-semibold ${
                     s.status === "approved"

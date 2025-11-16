@@ -426,6 +426,15 @@ export default function AgentTable() {
     }
   }, [showModal, pendingAction]);
 
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    fetchAgents();
+  }, 500);
+
+  return () => clearTimeout(timer); // cleanup
+}, []);
+
+
   const openAddModal = () => {
     setPendingAction({ type: "add" });
     setShowModal(true);

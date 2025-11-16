@@ -266,6 +266,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Search, Download, ChevronUp, ChevronDown, X } from "lucide-react";
 
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+
 export default function ManagerSellerList() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -303,15 +306,21 @@ export default function ManagerSellerList() {
 
   // --- Filtered accounts based on search ---
   const filteredAccounts = useMemo(() => {
-    return accounts.filter(
-      (a) =>
-        a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (a.phone || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (a.gender || "").toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [accounts, searchTerm]);
+  const term = searchTerm.toLowerCase();
+
+  return accounts.filter((a) => {
+    const matchesText =
+      a.name.toLowerCase().includes(term) ||
+      a.email.toLowerCase().includes(term) ||
+      a.role.toLowerCase().includes(term) ||
+      (a.phone || "").toLowerCase().includes(term);
+
+    const matchesGender =
+      !term || (a.gender && a.gender.toLowerCase() === term);
+
+    return matchesText || matchesGender;
+  });
+}, [accounts, searchTerm]);
 
   // --- Sorted accounts ---
   const sortedAccounts = useMemo(() => {
@@ -339,6 +348,53 @@ export default function ManagerSellerList() {
     setDeleteTarget(account);
     setDeletePasscode("");
     setShowDeleteModal(true);
+  };
+
+  const handleExport = () => {
+    const term = searchTerm.toLowerCase();
+
+    // Safe filtered export
+    const exportData = sortedAccounts.filter((a) => {
+      const genderMatch =
+        !term || (a.gender && a.gender.toLowerCase() === term);
+
+      const textMatch =
+        a.name.toLowerCase().includes(term) ||
+        a.email.toLowerCase().includes(term) ||
+        a.role.toLowerCase().includes(term) ||
+        (a.phone || "").toLowerCase().includes(term);
+
+      return textMatch || genderMatch;
+    });
+
+    const exportList = exportData.map((a, index) => ({
+      No: index + 1,
+      Name: a.name,
+      Email: a.email,
+      Role: a.role,
+      Phone: a.phone || "-",
+      Gender: a.gender || "-",
+    }));
+
+    if (exportList.length === 0) {
+      alert("No accounts to export.");
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(exportList);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Accounts");
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+
+    const blob = new Blob([excelBuffer], {
+      type: "application/octet-stream",
+    });
+
+    saveAs(blob, "Manager_Seller_List.xlsx");
   };
 
   // --- Confirm delete with passcode ---
@@ -419,6 +475,7 @@ export default function ManagerSellerList() {
             />
           </div>
           <button
+            onClick={handleExport}
             className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
           >
             <Download size={14} /> Export

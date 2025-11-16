@@ -703,24 +703,25 @@ const ChatPage = () => {
       try {
         const res = await fetch(`${API_BASE}/users`);
         const data = await res.json();
-        const approved = Array.isArray(data)
-          ? data.filter((u) => (u.status ? u.status === "approved" : true))
-          : [];
-        const list = approved.length
-          ? approved
-          : Array.isArray(data)
-          ? data
-          : [];
+
+        // Correct response parsing
+        const users = Array.isArray(data.users) ? data.users : [];
+
+        const approved = users.filter((u) => u.status === "approved");
+        const list = approved.length ? approved : users;
+
         setUsers(list);
         if (list.length > 0 && !selectedUser) setSelectedUser(list[0]);
 
-        // 🟡 fetch all last messages + unseen counts once
+        // preload messages
         const all = {};
         const counts = {};
+
         for (const u of list) {
           try {
             const resMsg = await fetch(`${API_BASE}/messages?userId=${u.id}`);
             const msgs = await resMsg.json();
+
             const formatted = (Array.isArray(msgs) ? msgs : []).map((msg) => ({
               from: msg.sender === "admin" ? "admin" : "user",
               text: msg.content,
@@ -729,23 +730,25 @@ const ChatPage = () => {
               seen: !!msg.seen,
               createdAt: msg.created_at,
             }));
+
             all[u.id] = formatted;
 
-            // unseen count
-            const unseen = formatted.filter(
+            counts[u.id] = formatted.filter(
               (m) => m.from === "user" && !m.seen
             ).length;
-            counts[u.id] = unseen;
           } catch (e) {
             console.error("Msg preload fail for", u.id, e);
           }
         }
+
         setMessages(all);
         setUnreadCounts(counts);
+
       } catch (err) {
         console.error("Failed to fetch users:", err);
       }
     };
+
     fetchUsers();
   }, []);
 

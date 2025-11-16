@@ -42,11 +42,17 @@ export default function GoldConversion() {
     }
   };
 
+  // useEffect(() => {
+  //   fetchFormula();
+  //   const interval = setInterval(fetchFormula, 60000);
+  //   return () => clearInterval(interval);
+  // }, []);
   useEffect(() => {
-    fetchFormula();
-    const interval = setInterval(fetchFormula, 60000);
-    return () => clearInterval(interval);
-  }, []);
+  fetchFormula();
+  const interval = setInterval(fetchFormula, 500);
+  return () => clearInterval(interval);
+}, []);
+
 
   // Open password modal
   const handleUpdateClick = () => {

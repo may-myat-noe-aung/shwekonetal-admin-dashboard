@@ -104,6 +104,8 @@ export default function UserDetailModal({ viewUser, onClose }) {
             {[
               { label: "ID Type", value: viewUser.id_type },
               { label: "ID Number", value: viewUser.id_number },
+              { label: "Agent", value: viewUser.agent || "Normal" },
+              { label: "Gender", value: viewUser.gender },
               { label: "Phone", value: viewUser.phone },
               { label: "State / City", value: `${viewUser.state} / ${viewUser.city}` },
               { label: "Address", value: viewUser.address },

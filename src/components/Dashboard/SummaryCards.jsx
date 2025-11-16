@@ -140,7 +140,7 @@ function SummaryCard({ title, value, sub, icon, accent, subClass }) {
           <span>{title}</span>
           {icon}
         </div>
-        <div className="text-xl font-semibold">{value}</div>
+        <div className="text-lg mb-1 font-semibold">{value}</div>
         <div className={`text-xs ${subClass || "text-neutral-500"}`}>{sub}</div>
       </div>
     </div>

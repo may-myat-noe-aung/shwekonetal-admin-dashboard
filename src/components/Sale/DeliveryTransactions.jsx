@@ -173,6 +173,7 @@ const DeliveryTransactions = ({ sales, updateStatus }) => {
         Name: item.fullname,
         Seller: item.seller,
         Manager: item.manager,
+        Agent: item.agent ? item.agent : 'Normal',
         Type: item.type,
         Gold: item.gold,
         Delivery_Fees: `${item.deli_fees ? item.deli_fees.toLocaleString() : '-'} ကျပ်`,
@@ -279,7 +280,6 @@ const DeliveryTransactions = ({ sales, updateStatus }) => {
                 { label: "Service Fee", key: "serviceFee" },
                 { label: "Delivery Date", key: "date" },
                 { label: "Time", key: "time" },
-                { label: "Payment", key: "payment" },
                 { label: "Status", key: "status" },
                 { label: "Details", key: "details" },
               ].map((col) => (
@@ -326,17 +326,16 @@ const DeliveryTransactions = ({ sales, updateStatus }) => {
                   <td className="py-2 px-3">{s.gold}</td>
                   <td className="py-2 px-3">{s.deli_fees ?? "-"} ကျပ်</td>
                   <td className="py-2 px-3">{s.service_fees ?? "-"}ကျပ်</td>
-                  <td className="py-2 px-3 whitespace-nowrap">
+                  <td className="py-2 px-3 ">
                     {new Intl.DateTimeFormat("en-GB", {
                       day: "2-digit",
                       month: "2-digit",
                       year: "numeric",
                     }).format(new Date(s.date || s.created_at))}
                   </td>
-                  <td className="py-2 px-3 whitespace-nowrap">
+                  <td className="py-2 px-3 ">
                     {s.date.toLocaleTimeString()}
                   </td>
-                  <td className="py-2 px-3 capitalize">{s.method}</td>
                   <td
                     className={`py-2 px-3 capitalize font-semibold ${s.status === "approved"
                         ? "text-emerald-400"
@@ -347,7 +346,7 @@ const DeliveryTransactions = ({ sales, updateStatus }) => {
                   >
                     {s.status}
                   </td>
-                  <td className="py-2 px-3">
+                  <td className="py-2 px-3 flex justify-center">
                     <button
                       onClick={() => setSelectedTxn(s)}
                       className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-full bg-yellow-600 text-white hover:bg-yellow-500 transition-all duration-200 text-center"

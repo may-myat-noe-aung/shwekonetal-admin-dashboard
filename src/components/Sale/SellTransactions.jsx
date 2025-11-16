@@ -1,7 +1,17 @@
 import React, { useState, useMemo } from "react";
-import { Info, Search, Download, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  Info,
+  Search,
+  Download,
+  ChevronUp,
+  ChevronDown,
+  HandHelping,
+} from "lucide-react";
 import TransactionPopup from "./TransactionPopup.jsx";
 import { useNavigate } from "react-router-dom";
+
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 const SellTransactions = ({ sales, updateStatus }) => {
   const [selectedTxn, setSelectedTxn] = useState(null);
@@ -22,36 +32,128 @@ const SellTransactions = ({ sales, updateStatus }) => {
   const [toDate, setToDate] = useState("");
 
   // Filtered Sales based on search
-const filteredSales = useMemo(() => {
-  if (!sales || sales.length === 0) return [];
-  const term = searchTerm.toLowerCase();
+  const filteredSales = useMemo(() => {
+    return (
+      sales
+        .filter((s) => s.type === "sell")
+        .filter(
+          (s) =>
+            s.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.userid.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.method.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.price.toString().includes(searchTerm)
+        )
+        // --- date filter ---
+        .filter((s) => {
+          const itemTime = s.date.getTime();
+          const fromTime = fromDate ? new Date(fromDate).getTime() : null;
+          const toTime = toDate
+            ? new Date(toDate).setHours(23, 59, 59, 999)
+            : null; // include full day
 
-  return sales
-    .filter((s) => s.type === "sell")
-    .filter(
-      (s) =>
-        s.id?.toString().toLowerCase().includes(term) ||
-        s.userid?.toString().toLowerCase().includes(term) ||
-        s.fullname?.toString().toLowerCase().includes(term) ||
-        s.status?.toString().toLowerCase().includes(term) ||
-        s.method?.toString().toLowerCase().includes(term) ||
-        s.price?.toString().toLowerCase().includes(term)
-    )
-    .filter((s) => {
-      // ✅ convert string to Date object
-      const itemDate = new Date(s.date || s.created_at);
-      itemDate.setHours(0, 0, 0, 0); // start of the day
+          // ✅ Case 1: fromDate & toDate both exist → range
+          if (fromTime && toTime) {
+            return itemTime >= fromTime && itemTime <= toTime;
+          }
 
-      const from = fromDate ? new Date(fromDate) : null;
-      const to = toDate ? new Date(toDate) : null;
+          // ✅ Case 2: only one date → single day filter
+          if (fromTime || toTime) {
+            const singleDate = new Date(fromTime || toTime);
+            const startOfDay = new Date(
+              singleDate.setHours(0, 0, 0, 0)
+            ).getTime();
+            const endOfDay = new Date(
+              singleDate.setHours(23, 59, 59, 999)
+            ).getTime();
+            return itemTime >= startOfDay && itemTime <= endOfDay;
+          }
 
-      if (from) from.setHours(0, 0, 0, 0);
-      if (to) to.setHours(23, 59, 59, 999);
+          // ✅ Case 3: no filter → show all
+          return true;
+        })
+    );
+  }, [sales, searchTerm, fromDate, toDate]);
 
-      return (!from || itemDate >= from) && (!to || itemDate <= to);
-    });
-}, [sales, searchTerm, fromDate, toDate]);
+  const handleExport = async () => {
+    try {
+      const res = await fetch("http://38.60.244.74:3000/sales");
+      const data = await res.json();
 
+      if (!data.success && !Array.isArray(data.data)) {
+        alert("No data found to export.");
+        return;
+      }
+
+      // frontend filter logic (search + date)
+      const filtered = data.data
+        .filter((s) => ["sell"].includes(s.type?.toLowerCase()))
+        .filter((s) => {
+          // search (fullname, id_number, email)
+          const text =
+            `${s.fullname} ${s.userid} ${s.price} ${s.status} ${s.method}`.toLowerCase();
+          const matchesSearch = searchTerm
+            ? text.includes(searchTerm.toLowerCase())
+            : true;
+
+          // date range filter
+          const createdAt = new Date(s.created_at);
+          const fromTime = fromDate ? new Date(fromDate).getTime() : null;
+          const toTime = toDate ? new Date(toDate).getTime() + 86399999 : null;
+
+          const matchesDate =
+            (!fromTime || createdAt.getTime() >= fromTime) &&
+            (!toTime || createdAt.getTime() <= toTime);
+
+          return matchesSearch && matchesDate;
+        });
+
+      if (filtered.length === 0) {
+        alert("No matching data to export.");
+        return;
+      }
+
+      // convert to excel
+      const exportData = filtered.map((item, count) => ({
+        ID: String(count + 1),
+        UserID: item.userid,
+        Name: item.fullname,
+        Seller: item.seller,
+        Manager: item.manager,
+        Agent: item.agent ? item.agent : "Normal",
+        Type: item.type,
+        Gold: item.gold,
+        Price: `${item.price.toLocaleString()} ကျပ်`,
+        Payment_Phone: item.payment_phone,
+        Payment_Name: item.payment_name,
+        Method: item.method,
+        Status: item.status,
+        Date: new Date(item.created_at).toLocaleDateString(),
+        Time: new Date(item.created_at).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sell Sales");
+
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+      });
+      const blob = new Blob([excelBuffer], {
+        type: "application/octet-stream",
+      });
+
+      saveAs(blob, "Sell Sales.xlsx");
+    } catch (error) {
+      console.error("Export error:", error);
+    }
+  };
 
   // Sorted Sales
   const sortedSales = useMemo(() => {
@@ -97,27 +199,6 @@ const filteredSales = useMemo(() => {
     setSortConfig({ key, direction });
   };
 
-  // CSV Export
-  const exportCSV = () => {
-    if (filteredSales.length === 0) return;
-    const headers = ["ID", "User", "Type", "Gold", "Price", "Status", "Date"];
-    const rows = filteredSales.map((s) => [
-      s.id,
-      s.userid,
-      s.type,
-      s.gold,
-      s.price,
-      s.status,
-      s.date.toLocaleString(),
-    ]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "sell_transactions.csv";
-    link.click();
-  };
-
   // Sliding window pagination
   const startPage = (pageWindow - 1) * pagesPerWindow + 1;
   const endPage = Math.min(startPage + pagesPerWindow - 1, totalPages);
@@ -145,10 +226,10 @@ const filteredSales = useMemo(() => {
                 />
               </div>
               <button
-                // onClick={exportCSV}
+                onClick={handleExport}
                 className="flex rounded-2xl items-center gap-1 text-xs px-2 py-1 border border-neutral-700 text-neutral-300 hover:text-white"
               >
-                <Download size={14} /> Export CSV
+                <Download size={14} /> Export
               </button>
             </div>
 
@@ -188,7 +269,7 @@ const filteredSales = useMemo(() => {
               ].map((col) => (
                 <th
                   key={col.key}
-                  className="py-2 px-3 cursor-pointer select-none text-center whitespace-nowrap"
+                  className="py-2 px-3 cursor-pointer select-none text-center "
                   onClick={() => col.key !== "details" && requestSort(col.key)}
                 >
                   <div className="flex items-center gap-1 justify-center">
@@ -227,24 +308,26 @@ const filteredSales = useMemo(() => {
                   key={s.id}
                   className="border-b border-neutral-800 hover:bg-neutral-800/50 h-[30px] text-center"
                 >
-                  <td className="py-2 px-3 whitespace-nowrap">{s.userid}</td>
-                  <td className="py-2 px-3 whitespace-nowrap">{s.fullname}</td>
-                  <td className="py-2 px-3 whitespace-nowrap">{s.gold}</td>
-                  <td className="py-2 px-3 whitespace-nowrap">
+                  <td className="py-2 px-3 ">{s.userid}</td>
+                  <td className="py-2 px-3 ">{s.fullname}</td>
+                  <td className="py-2 px-3 ">{s.gold}</td>
+                  <td className="py-2 px-3 ">
                     {s.price.toLocaleString()} ကျပ်
                   </td>
-               <td className="py-2 px-3 whitespace-nowrap">
-  {new Date(s.date || s.created_at).toLocaleDateString("en-GB")}
-</td>
+                  <td className="py-2 px-3 ">
+                    {new Date(s.date || s.created_at).toLocaleDateString(
+                      "en-GB"
+                    )}
+                  </td>
 
-                  <td className="py-2 px-3 whitespace-nowrap">
+                  <td className="py-2 px-3 ">
                     {s.date.toLocaleTimeString()}
                   </td>
-                  <td className="py-2 px-3 capitalize whitespace-nowrap">
+                  <td className="py-2 px-3 capitalize ">
                     {s.method}
                   </td>
                   <td
-                    className={`py-2 px-3 capitalize font-semibold whitespace-nowrap ${
+                    className={`py-2 px-3 capitalize font-semibold  ${
                       s.status === "approved"
                         ? "text-emerald-400"
                         : s.status === "pending"
@@ -254,7 +337,7 @@ const filteredSales = useMemo(() => {
                   >
                     {s.status}
                   </td>
-                  <td className="py-2 px-3 whitespace-nowrap">
+                  <td className="py-2 px-3 flex justify-center">
                     <button
                       onClick={() => setSelectedTxn(s)}
                       className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-full bg-yellow-600 text-white hover:bg-yellow-500 transition-all duration-200 text-center"
