@@ -6,7 +6,7 @@ export default function BuyVsSell() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    async function fetchData() {
+    const fetchData = async () => {
       try {
         const res = await fetch("http://38.60.244.74:3000/buy-vs-sell");
         const json = await res.json();
@@ -14,9 +14,16 @@ export default function BuyVsSell() {
       } catch (error) {
         console.error("Failed to fetch Buy vs Sell data:", error);
       }
-    }
+    };
 
+    // ပထမဆုံး fetch တစ်ခါ
     fetchData();
+
+    // 500ms အကြိမ် fetch
+    const intervalId = setInterval(fetchData, 500);
+
+    // Cleanup on unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   return (

@@ -10,13 +10,14 @@ export default function GoldConversion() {
   const [goldList, setGoldList] = useState([]);
   const [lastUpdate, setLastUpdate] = useState({ kyat: 1, yway: 128 });
   const [showTable, setShowTable] = useState(false);
+const [inputFocused, setInputFocused] = useState(false);
 
   // Password modal states
   const [showModal, setShowModal] = useState(false);
   const [password, setPassword] = useState("");
 
-  // Countdown timer (optional, from your modal UI)
-
+  // AUTO FETCH CONTROL
+  const [autoFetch, setAutoFetch] = useState(true);
 
   const fetchFormula = async () => {
     try {
@@ -25,7 +26,11 @@ export default function GoldConversion() {
         const latest = res.data[0];
         if (latest?.yway) {
           setLastUpdate({ kyat: 1, yway: latest.yway });
-          setYway(latest.yway);
+
+          // Only update input if autoFetch is ON
+          if (autoFetch) {
+            setYway(latest.yway);
+          }
         }
 
         const tableData = res.data.map((item) => ({
@@ -35,6 +40,7 @@ export default function GoldConversion() {
           date: item.date,
           time: item.time,
         }));
+
         setGoldList(tableData);
       }
     } catch (err) {
@@ -42,30 +48,29 @@ export default function GoldConversion() {
     }
   };
 
-  // useEffect(() => {
-  //   fetchFormula();
-  //   const interval = setInterval(fetchFormula, 60000);
-  //   return () => clearInterval(interval);
-  // }, []);
+  // LIVE FETCH (controlled)
   useEffect(() => {
-  fetchFormula();
-  const interval = setInterval(fetchFormula, 500);
-  return () => clearInterval(interval);
-}, []);
+    if (!autoFetch) return; // stop when editing or modal open
 
+    fetchFormula();
+    const interval = setInterval(fetchFormula, 500);
+    return () => clearInterval(interval);
+  }, [autoFetch]);
 
   // Open password modal
   const handleUpdateClick = () => {
     setShowModal(true);
+    setAutoFetch(false);   // <-- keep OFF
   };
 
   // Cancel modal
   const cancelUpdate = () => {
     setShowModal(false);
     setPassword("");
+    setAutoFetch(true); // resume fetch
   };
 
-  // Handle password submit
+  // Handle Confirm
   const handlePasswordSubmit = async () => {
     if (!password) {
       alert("Please enter password");
@@ -73,12 +78,9 @@ export default function GoldConversion() {
     }
 
     try {
-      // --- Verify passcode dynamically ---
       const verifyResponse = await axios.post(
         "http://38.60.244.74:3000/admin/verify-admin-passcode",
-        {
-          passcode: password,
-        }
+        { passcode: password }
       );
 
       if (!verifyResponse.data.success) {
@@ -86,7 +88,6 @@ export default function GoldConversion() {
         return;
       }
 
-      // --- Submit gold update ---
       await axios.post(`${API_BASE}/formula`, { kyat, yway });
 
       const newRow = {
@@ -96,14 +97,16 @@ export default function GoldConversion() {
         date: new Date().toLocaleDateString(),
         time: new Date().toLocaleTimeString(),
       };
+
       setGoldList((prev) => [...prev, newRow]);
       setLastUpdate({ kyat, yway });
 
-      // --- Reset input & close modal ---
-      setKyat(1);
-      setYway(yway);
-      setPassword("");
       setShowModal(false);
+      setPassword("");
+
+      // resume live fetching
+      setAutoFetch(true);
+
     } catch (err) {
       alert("Verification failed!");
     }
@@ -116,25 +119,38 @@ export default function GoldConversion() {
       <div className="flex items-center justify-between gap-2 flex-wrap mt-2">
         <div className="flex items-center gap-2">
           <span>1 ကျပ် = </span>
-       <input
-  type="number"
-  value={yway}
-  onChange={(e) => {
-    const value = e.target.value;
-    setYway(value === "" ? "" : Number(value));
-  }}
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleUpdateClick(); // <-- same as clicking Update button
-    }
-  }}
-  className="w-20 rounded-lg bg-neutral-800 border px-2 py-1 text-sm"
-  placeholder="ရွေး"
-/>
+
+          <input
+            type="number"
+            value={yway}
+            onChange={(e) => {
+              const value = e.target.value;
+              setYway(value === "" ? "" : Number(value));
+              setAutoFetch(false); // STOP fetch while typing
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleUpdateClick();
+              }
+            }}
+            onFocus={() => {
+              setInputFocused(true);
+              setAutoFetch(false);
+            }}
+            onBlur={() => {
+              if (!showModal && !inputFocused) {
+                setAutoFetch(true);
+              }
+            }}
+            className="w-20 rounded-lg bg-neutral-800 border px-2 py-1 text-sm"
+            placeholder="ရွေး"
+          />
+
 
           <span> ရွေး </span>
           <button
+            onMouseDown={(e) => e.preventDefault()}   // <-- STOP input blur
             onClick={handleUpdateClick}
             className="bg-yellow-500 text-black px-3 py-1 rounded-md text-sm ml-2"
           >
@@ -161,7 +177,7 @@ export default function GoldConversion() {
           style={{
             maxHeight: "8rem",
             scrollbarWidth: "thin",
-            scrollbarColor: "#eab308 #171717", // (yellow-500 thumb, dark track)
+            scrollbarColor: "#eab308 #171717",
           }}
         >
           <table className="w-full text-sm border-collapse">
@@ -237,4 +253,4 @@ export default function GoldConversion() {
       )}
     </section>
   );
-}  
+}

@@ -36,25 +36,33 @@ export default function GoldManagementPage() {
   const [countdown, setCountdown] = useState(10);
   const [timer, setTimer] = useState(null);
 
+  const [inputFocused, setInputFocused] = useState(false); // ✅ new state to pause fetch
+
   const API_BASE = "http://38.60.244.74:3000";
 
-  // Fetch full price history and latest prices (Buy + Sell)
-  // useEffect(() => {
-  //   fetchPriceHistory(); // Chart data
-  //   fetchLatestBuyPrice(); // SummaryCard Buy Price
-  //   fetchLatestSellPrice(); // ✅ SummaryCard Sell Price
-  // }, []);
-
+  // Initial fetch after mount
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Fetch all API data after 500ms
       fetchPriceHistory();
       fetchLatestBuyPrice();
       fetchLatestSellPrice();
     }, 500);
 
-    return () => clearTimeout(timer); // cleanup if component unmounts
+    return () => clearTimeout(timer);
   }, []);
+
+  // Live fetch every 5 seconds, but pause when inputFocused
+  useEffect(() => {
+    if (inputFocused) return; // stop fetch while editing
+
+    const interval = setInterval(() => {
+      fetchPriceHistory();
+      fetchLatestBuyPrice();
+      fetchLatestSellPrice();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [inputFocused]);
 
   const fetchPriceHistory = async () => {
     try {
@@ -63,17 +71,16 @@ export default function GoldManagementPage() {
         axios.get(`${API_BASE}/selling-prices`),
       ]);
 
-      // Get today (first row) only
-      const todayBuyDate = Object.keys(buyRes.data)[0]; // assuming first row is today
+      const todayBuyDate = Object.keys(buyRes.data)[0];
       const todaySellDate = Object.keys(sellRes.data)[0];
 
       const buyData = Object.entries(buyRes.data[todayBuyDate])
         .filter(([_, price]) => price !== null)
-        .map(([time, price]) => ({ time, buy: price }));
+        .map(([time, buy]) => ({ time, buy }));
 
       const sellData = Object.entries(sellRes.data[todaySellDate])
         .filter(([_, price]) => price !== null)
-        .map(([time, price]) => ({ time, sell: price }));
+        .map(([time, sell]) => ({ time, sell }));
 
       setChartBuyData(buyData);
       setChartSellData(sellData);
@@ -82,11 +89,10 @@ export default function GoldManagementPage() {
     }
   };
 
-  // Fetch latest buy price from cloud for SummaryCard
   const fetchLatestBuyPrice = async () => {
     try {
       const res = await axios.get(`${API_BASE}/buying-prices/latest`);
-      const latest = res.data.price; // assuming API returns { price: ... }
+      const latest = res.data.price;
       setBuyPrice(latest);
       setBuyInput(latest);
     } catch (err) {
@@ -94,7 +100,6 @@ export default function GoldManagementPage() {
     }
   };
 
-  // ✅ Fetch latest sell price from cloud for SummaryCard
   const fetchLatestSellPrice = async () => {
     try {
       const res = await axios.get(`${API_BASE}/selling-prices/latest`);
@@ -139,26 +144,11 @@ export default function GoldManagementPage() {
     try {
       if (type === "buy") {
         await axios.post(`${API_BASE}/buying-prices`, { price: buyInput });
-
-        // Refetch today's data
-        const res = await axios.get(`${API_BASE}/buying-prices`);
-        const todayBuyDate = Object.keys(res.data)[0];
-        const buyData = Object.entries(res.data[todayBuyDate])
-          .filter(([_, price]) => price !== null)
-          .map(([time, buy]) => ({ time, buy }));
-
-        setChartBuyData(buyData);
+        fetchPriceHistory();
         fetchLatestBuyPrice();
       } else if (type === "sell") {
         await axios.post(`${API_BASE}/selling-prices`, { price: sellInput });
-
-        const res = await axios.get(`${API_BASE}/selling-prices`);
-        const todaySellDate = Object.keys(res.data)[0];
-        const sellData = Object.entries(res.data[todaySellDate])
-          .filter(([_, price]) => price !== null)
-          .map(([time, sell]) => ({ time, sell }));
-
-        setChartSellData(sellData);
+        fetchPriceHistory();
         fetchLatestSellPrice();
       }
     } catch (err) {
@@ -175,13 +165,11 @@ export default function GoldManagementPage() {
     }
 
     try {
-      // Call API to verify admin passcode
       const response = await axios.post(
-        "http://38.60.244.74:3000/admin/verify-admin-passcode",
-        { passcode: password } // send password
+        `${API_BASE}/admin/verify-admin-passcode`,
+        { passcode: password }
       );
 
-      // If correct, start countdown
       if (response.data.success) {
         startCountdown(modalType);
       } else {
@@ -208,7 +196,6 @@ export default function GoldManagementPage() {
         {/* Buy + Sell Charts */}
         <section className="">
           {/* Buy */}
-          {/* Buy */}
           <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
             <div className="col-span-1 md:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 2xl:py-6 w-full">
               <h3 className="mb-6 font-semibold text-sm md:text-base">
@@ -233,6 +220,8 @@ export default function GoldManagementPage() {
                         e.target.value === "" ? "" : Number(e.target.value)
                       )
                     }
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleUpdateClick("buy");
                     }}
@@ -309,20 +298,22 @@ export default function GoldManagementPage() {
                   <input
                     type="number"
                     value={sellInput}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setSellInput(value === "" ? "" : Number(value));
-                    }}
+                    onChange={(e) =>
+                      setSellInput(
+                        e.target.value === "" ? "" : Number(e.target.value)
+                      )
+                    }
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
-                        handleUpdateClick("sell"); // <-- CORRECT function
+                        handleUpdateClick("sell");
                       }
                     }}
                     className="rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm flex-1 w-full"
                     placeholder="Sell Price"
                   />
-
                   <button
                     onClick={() => handleUpdateClick("sell")}
                     className="bg-red-600 text-white px-3 py-2 rounded-md text-sm w-full sm:w-auto"
@@ -341,12 +332,12 @@ export default function GoldManagementPage() {
                       <linearGradient id="sell" x1="0" y1="0" x2="0" y2="1">
                         <stop
                           offset="5%"
-                          stopColor="#9C0003  "
+                          stopColor="#9C0003"
                           stopOpacity={0.3}
                         />
                         <stop
                           offset="95%"
-                          stopColor="#9C0003  "
+                          stopColor="#9C0003"
                           stopOpacity={0}
                         />
                       </linearGradient>
@@ -364,7 +355,7 @@ export default function GoldManagementPage() {
                     <Area
                       type="monotone"
                       dataKey="sell"
-                      stroke="#9C0003 "
+                      stroke="#9C0003"
                       fill="url(#sell)"
                     />
                   </AreaChart>

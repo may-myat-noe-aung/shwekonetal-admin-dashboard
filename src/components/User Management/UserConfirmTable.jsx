@@ -80,6 +80,7 @@ export default function UserConfirmTable() {
               {[
                 "Photo",
                 "Full Name",
+                "Agent",
                   "ID Type",
                   "ID Number",
                   "Email",
@@ -126,6 +127,7 @@ export default function UserConfirmTable() {
                   </td>
 
                   <td className="px-3 py-2 text-center">{u.fullname}</td>
+                  <td className="px-3 py-2 text-center">{u.agent || "Normal"}</td>
                   <td className="px-3 py-2 text-center">{u.id_type}</td>
                   <td className="px-3 py-2 text-center">{u.id_number}</td>
                   <td className="px-3 py-2 text-center">{u.email}</td>

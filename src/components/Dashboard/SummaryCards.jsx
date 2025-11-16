@@ -21,13 +21,24 @@ export default function SummaryCards() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://38.60.244.74:3000/dashboard-summarys")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setSummary(data);
-      })
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+    const fetchSummary = () => {
+      fetch("http://38.60.244.74:3000/dashboard-summarys")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) setSummary(data);
+        })
+        .catch((err) => console.error(err))
+        .finally(() => setLoading(false));
+    };
+
+    // အရင်ဆုံး တစ်ခါ fetch
+    fetchSummary();
+
+    // 500ms အကြိမ်ကြိမ် fetch
+    const intervalId = setInterval(fetchSummary, 500);
+
+    // component unmount ဖြစ်ရင် interval ရပ်
+    return () => clearInterval(intervalId);
   }, []);
 
   if (loading) {

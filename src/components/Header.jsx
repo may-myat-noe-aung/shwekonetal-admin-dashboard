@@ -4,12 +4,14 @@ import React, { useEffect, useState, useRef } from "react";
 import { Bell, Search } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import NotificationFetcher from "./NotificationFetcher"; // ✅ import
+import NotificationFetcherForSeller from "./NotificationFetcherForSeller";
 
 const Header = () => {
   const [query, setQuery] = useState("");
   const [adminData, setAdminData] = useState(null);
   const location = useLocation();
   const adminId = localStorage.getItem("adminId");
+  const adminRoll = localStorage.getItem("adminRoll")
 
   useEffect(() => {
     if (!adminId) return;
@@ -45,7 +47,11 @@ const Header = () => {
       
 
           {/* ✅ Notification */}
-          <NotificationFetcher />
+          {adminRoll === "seller" ? (
+            <NotificationFetcherForSeller />
+          ) : (
+            <NotificationFetcher />
+          )}
 
           {/* Profile */}
           <div className="flex items-center gap-4 ml-4">

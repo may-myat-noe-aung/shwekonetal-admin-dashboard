@@ -36,32 +36,34 @@ export default function UserTableWithSummary() {
   // --- API fetch after 500ms
   const [newUsersApiCount, setNewUsersApiCount] = useState(0); // ✅ New Users from API
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      const fetchUsers = async () => {
-        try {
-          const res = await fetch("http://38.60.244.74:3000/users");
-          if (!res.ok) throw new Error("Failed to fetch users");
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch("http://38.60.244.74:3000/users");
+        if (!res.ok) throw new Error("Failed to fetch users");
 
-          const data = await res.json(); // { new_users: 0, users: [...] }
+        const data = await res.json(); // { new_users: 0, users: [...] }
 
-          // ⭐ Save API new_users value
-          setNewUsersApiCount(data.new_users || 0);
+        setNewUsersApiCount(data.new_users || 0);
 
-          const filtered = (data.users || []).filter((u) =>
-            ["approved", "pending"].includes(u.status?.toLowerCase())
-          );
+        const filtered = (data.users || []).filter((u) =>
+          ["approved", "pending"].includes(u.status?.toLowerCase())
+        );
 
-          setUsers(filtered);
-        } catch (err) {
-          console.error(err);
-          alert("Cannot load users");
-        }
-      };
+        setUsers(filtered);
+      } catch (err) {
+        console.error(err);
+        alert("Cannot load users");
+      }
+    };
 
-      fetchUsers();
-    }, 500);
+    // ပထမ fetch တစ်ခါ
+    fetchUsers();
 
-    return () => clearTimeout(timeout);
+    // 500ms အကြိမ် fetch
+    const intervalId = setInterval(fetchUsers, 500);
+
+    // Cleanup on unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   // --- Summary counts
@@ -410,107 +412,170 @@ export default function UserTableWithSummary() {
           </div>
 
           {/* Table */}
-        {/* Responsive Table */}
-<div className="overflow-x-auto rounded-xl">
-  <table className="min-w-[800px] md:min-w-full text-sm text-center border-collapse">
-    <thead className="bg-neutral-900/80 border-b border-neutral-700">
-      <tr className="text-white">
-        {[
-          "Photo",
-          "Full Name",
-          "Agent",
-          "ID Type",
-          "ID Number",
-          "Email",
-          "Phone",
-          "Date",
-          "State/City",
-          "Action",
-        ].map((h) => (
-          <th
-            key={h}
-            className="px-2 py-2 text-xs md:text-sm whitespace-nowrap"
-          >
-            {h}
-          </th>
-        ))}
-      </tr>
-    </thead>
-    <tbody>
-      {paginatedUsers.length === 0 ? (
-        <tr>
-          <td colSpan={10} className="py-6 text-white/50 h-[150px]">
-            No users
-          </td>
-        </tr>
-      ) : (
-        paginatedUsers.map((u) => (
-          <tr
-            key={u.id}
-            className="hover:bg-neutral-900/50 transition-colors"
-          >
-            <td className="px-1 py-2">
-              {u.photo ? (
-                <img
-                  src={
-                    u.photo.startsWith("http")
-                      ? u.photo
-                      : `http://38.60.244.74:3000/uploads/${u.photo}`
-                  }
-                  alt="Profile"
-                  className="h-10 w-10 rounded-full mx-auto object-cover cursor-pointer"
-                  onClick={() =>
-                    setPreviewPhoto(
-                      u.photo.startsWith("http")
-                        ? u.photo
-                        : `http://38.60.244.74:3000/uploads/${u.photo}`
-                    )
-                  }
-                />
-              ) : (
-                <div className="h-10 w-10 rounded-full mx-auto flex items-center justify-center bg-emerald-500 text-white font-semibold text-xs">
-                  {u.fullname
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 4)}
-                </div>
-              )}
-            </td>
-            <td className="px-2 py-2">{u.fullname}</td>
-            <td className="px-2 py-2 hidden md:table-cell">{u.agent || "Normal"}</td>
-            <td className="px-2 py-2 hidden md:table-cell">{u.id_type}</td>
-            <td className="px-2 py-2 break-words whitespace-normal hidden lg:table-cell">{u.id_number}</td>
-            <td className="px-2 py-2 break-words whitespace-normal hidden lg:table-cell">{u.email}</td>
-            <td className="px-2 py-2 hidden md:table-cell">{u.phone}</td>
-            <td className="px-2 py-2 whitespace-nowrap">
-              {u.create_at
-                ? new Intl.DateTimeFormat("en-GB", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  }).format(new Date(u.create_at))
-                : "-"}
-            </td>
-            <td className="px-2 py-2 hidden md:table-cell">
-              {u.state} / {u.city}
-            </td>
-            <td className="px-2 py-2">
-              <button
-                onClick={() => setViewUser(u)}
-                className="flex items-center gap-1 px-2 py-1 bg-sky-600 hover:bg-sky-700 rounded text-white text-xs md:text-sm"
-              >
-                <Eye className="h-4 w-4" /> view
-              </button>
-            </td>
-          </tr>
-        ))
-      )}
-    </tbody>
-  </table>
-</div>
+          {/* Responsive Table */}
+          <div className="overflow-x-auto rounded-xl">
+            <table className="min-w-[800px] md:min-w-full text-sm text-center border-collapse">
+              <thead className="bg-neutral-900/80 border-b border-neutral-700">
+                <tr className="text-white">
+                  {[
+                    "Photo",
+                    "Full Name",
+                    "Agent",
+                    "ID Type",
+                    "ID Number",
+                    "Email",
+                    "Phone",
+                    "Date",
+                    "State/City",
+                    "Action",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-2 py-2 text-xs md:text-sm whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="py-6 text-white/50 h-[150px]">
+                      No users
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedUsers.map((u) => (
+                    <tr
+                      key={u.id}
+                      className="hover:bg-neutral-900/50 transition-colors"
+                    >
+                      <td className="px-1 py-2">
+                        {u.photo ? (
+                          <img
+                            src={
+                              u.photo.startsWith("http")
+                                ? u.photo
+                                : `http://38.60.244.74:3000/uploads/${u.photo}`
+                            }
+                            alt="Profile"
+                            className="h-10 w-10 rounded-full mx-auto object-cover cursor-pointer"
+                            onClick={() =>
+                              setPreviewPhoto(
+                                u.photo.startsWith("http")
+                                  ? u.photo
+                                  : `http://38.60.244.74:3000/uploads/${u.photo}`
+                              )
+                            }
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full mx-auto flex items-center justify-center bg-emerald-500 text-white font-semibold text-xs">
+                            {u.fullname
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()
+                              .slice(0, 4)}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-2 py-2">{u.fullname}</td>
+                      <td className="px-2 py-2 hidden md:table-cell">
+                        {u.agent || "Normal"}
+                      </td>
+                      <td className="px-2 py-2 hidden md:table-cell">
+                        {u.id_type}
+                      </td>
+                      <td className="px-2 py-2 break-words whitespace-normal hidden lg:table-cell">
+                        {u.id_number}
+                      </td>
+                      <td className="px-2 py-2 break-words whitespace-normal hidden lg:table-cell">
+                        {u.email}
+                      </td>
+                      <td className="px-2 py-2 hidden md:table-cell">
+                        {u.phone}
+                      </td>
+                      <td className="px-2 py-2 whitespace-nowrap">
+                        {u.create_at
+                          ? new Intl.DateTimeFormat("en-GB", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            }).format(new Date(u.create_at))
+                          : "-"}
+                      </td>
+                      <td className="px-2 py-2 hidden md:table-cell">
+                        {u.state} / {u.city}
+                      </td>
+                      <td className="px-2 py-2">
+                        <button
+                          onClick={() => setViewUser(u)}
+                          className="flex items-center gap-1 px-2 py-1 bg-sky-600 hover:bg-sky-700 rounded text-white text-xs md:text-sm"
+                        >
+                          <Eye className="h-4 w-4" /> view
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+            {/* Pagination */}
+            <div className="flex flex-col md:flex-row justify-between px-4 py-2 text-sm text-neutral-400 gap-2 md:gap-0 mt-4">
+              <p>
+                Page {totalPages === 0 ? 0 : page} / {totalPages}
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  disabled={page === 1}
+                  onClick={() => {
+                    const newPage = Math.max(1, page - 1);
+                    setPage(newPage);
+                    if (newPage < startPage)
+                      setPageWindow(Math.max(1, pageWindow - 1));
+                  }}
+                  className={`px-3 py-1 rounded-md border border-neutral-700 ${
+                    page === 1
+                      ? "text-neutral-500 cursor-not-allowed"
+                      : "text-yellow-400 hover:bg-neutral-900"
+                  }`}
+                >
+                  Prev
+                </button>
 
+                {visiblePages.map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n)}
+                    className={`px-3 py-1 rounded-md border border-neutral-700 ${
+                      page === n
+                        ? "bg-yellow-500 text-black font-semibold"
+                        : "text-yellow-400 hover:bg-neutral-900"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => {
+                    const newPage = Math.min(totalPages, page + 1);
+                    setPage(newPage);
+                    if (newPage > endPage) setPageWindow(pageWindow + 1);
+                  }}
+                  className={`px-3 py-1 rounded-md border border-neutral-700 ${
+                    page === totalPages
+                      ? "text-neutral-500 cursor-not-allowed"
+                      : "text-yellow-400 hover:bg-neutral-900"
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Details Modal */}

@@ -82,9 +82,9 @@ export default function AdminSetting2() {
 
   // ---------------- Main Return ----------------
   return (
-<div className="bg-neutral-950 text-neutral-100 p-6 h-[85.5vh] mx-auto max-w-7xl">
+<div className="bg-neutral-950 text-neutral-100 p-6 h-[85.5vh] mx-auto max-w-7xl  flex flex-col justify-center item-center">
   {/* Main Content */}
-  <div className="grid grid-cols-4 gap-6 bg-neutral-900 rounded-2xl border border-neutral-800 p-6 shadow-md hover:shadow-lg transition-shadow duration-200">
+  <div className="grid grid-cols-4 gap-6 bg-neutral-900 rounded-2xl border border-neutral-800 p-8 shadow-md hover:shadow-lg transition-shadow duration-200">
     {/* Left Column - Profile + Quick Actions */}
     <div className="col-span-1 space-y-6">
       {/* Profile Card */}

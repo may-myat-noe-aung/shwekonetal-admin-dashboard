@@ -76,6 +76,12 @@ export default function MiniChat({ user, onClose }) {
   }, [user]);
 
   useEffect(() => {
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 50); // small delay ensures messages are rendered
+  }, [user])
+
+  useEffect(() => {
     if (autoScroll) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
@@ -95,6 +101,14 @@ export default function MiniChat({ user, onClose }) {
       }, 50); // small delay ensures the messages are rendered
     }
   }, [messages, autoScroll]);
+
+  useEffect(() => {
+    if (!loading) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 50);
+    }
+  }, [loading, messages]);
 
   // ===== websocket =====
   useEffect(() => {

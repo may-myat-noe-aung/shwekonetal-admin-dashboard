@@ -43,8 +43,6 @@ export default function RecentTransactions() {
   //   fetchSales();
   // }, []);
   useEffect(() => {
-  const timer = setTimeout(() => {
-    // 🔹 original fetch function ကို 500ms delay နဲ့ run
     const fetchSales = async () => {
       try {
         const res = await fetch("http://38.60.244.74:3000/approve");
@@ -66,11 +64,15 @@ export default function RecentTransactions() {
       }
     };
 
+    // Fetch တစ်ခါ မူလမှာ
     fetchSales();
-  }, 500);
 
-  return () => clearTimeout(timer); // cleanup
-}, []);
+    // 500ms အကြိမ်ကြိမ် fetch
+    const intervalId = setInterval(fetchSales, 500);
+
+    // Cleanup on unmount
+    return () => clearInterval(intervalId);
+  }, []);
 
 
   // 🔹 Filtered Sales

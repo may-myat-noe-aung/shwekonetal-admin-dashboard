@@ -402,18 +402,25 @@ export default function AgentTable() {
   const pageSize = 5;
   const pagesPerWindow = 5;
 
-  const fetchAgents = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/agents`);
-      const data = await res.json();
-      if (data.success) setAgents(data.data);
-    } catch {
-      alert("Cannot load agents");
-    }
-  };
-
   useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/agents`);
+        const data = await res.json();
+        if (data.success) setAgents(data.data);
+      } catch {
+        alert("Cannot load agents");
+      }
+    };
+
+    // ပထမဆုံး fetch တစ်ခါ
     fetchAgents();
+
+    // 500ms အကြိမ် fetch
+    const intervalId = setInterval(fetchAgents, 500);
+
+    // Cleanup on unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {

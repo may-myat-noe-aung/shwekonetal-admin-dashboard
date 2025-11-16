@@ -1,5 +1,5 @@
+import React, { useState, useEffect, useRef } from "react";
 
-import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { X } from "lucide-react";
 
@@ -59,11 +59,20 @@ export default function ServerToggle() {
 
   const [pendingStatus, setPendingStatus] = useState(isOpen); // track selected option
 
+  const [timerId, setTimerId] = useState(null);
+  const [isCancelled, setIsCancelled] = useState(false);
+
   // ✅ Cancel modal
   const cancelUpdate = () => {
+    setIsCancelled(true); // Mark as cancelled
     setShowModal(false);
     setPassword("");
     setCountdown(10);
+
+    if (timerId) {
+      clearInterval(timerId); // Stop timer
+      setTimerId(null);
+    }
   };
 
   // ✅ Handle password confirm
@@ -73,17 +82,26 @@ export default function ServerToggle() {
       setShowAlert(true);
       return;
     }
-    // Start countdown
+
+    setIsCancelled(false); // Reset cancel flag
     let timeLeft = 10;
-    const timer = setInterval(() => {
+
+    const id = setInterval(() => {
       timeLeft -= 1;
       setCountdown(timeLeft);
+
       if (timeLeft === 0) {
-        clearInterval(timer);
+        clearInterval(id);
+        setTimerId(null);
         setShowModal(false);
-        toggleServer(pendingStatus);
+
+        if (!isCancelled) {
+          toggleServer(pendingStatus); // Only call API if not cancelled
+        }
       }
     }, 1000);
+
+    setTimerId(id); // Save interval id
   };
 
   // ✅ Close alert
@@ -104,8 +122,14 @@ export default function ServerToggle() {
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className={`w-full flex justify-between items-center px-3 py-2 rounded-lg text-sm font-semibold 
-              ${isOpen ? "bg-green-700 text-green-100" : "bg-red-700 text-red-100"} 
-              border ${isOpen ? "border-green-500" : "border-red-500"} hover:border-yellow-500 transition-colors duration-300`}
+              ${
+                isOpen
+                  ? "bg-green-700 text-green-100"
+                  : "bg-red-700 text-red-100"
+              } 
+              border ${
+                isOpen ? "border-green-500" : "border-red-500"
+              } hover:border-yellow-500 transition-colors duration-300`}
             >
               <span>{isOpen ? "Open" : "Closed"}</span>
               <svg
@@ -115,7 +139,12 @@ export default function ServerToggle() {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             </button>
 
