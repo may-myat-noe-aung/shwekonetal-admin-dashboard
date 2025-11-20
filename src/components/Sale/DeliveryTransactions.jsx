@@ -8,6 +8,9 @@ import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
+import { useAlert } from "../../AlertProvider";
+
+
 const DeliveryTransactions = ({ sales, updateStatus }) => {
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [previewImg, setPreviewImg] = useState(null);
@@ -21,24 +24,43 @@ const DeliveryTransactions = ({ sales, updateStatus }) => {
   const pagesPerWindow = 10;
   const navigate = useNavigate();
 
+    const { showAlert } = useAlert();
+  
+
   const [salesData, setSalesData] = useState([]);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
 
   // Fetch API
-  useEffect(() => {
-    fetch("http://38.60.244.74:3000/sales")
-      .then(res => res.json())
-      .then(data => {
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const res = await fetch("http://38.60.244.74:3000/sales");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
         setSalesData(
-          data.data.map(s => ({
+          data.data.map((s) => ({
             ...s,
-            date: new Date(s.created_at)
+            date: new Date(s.created_at),
           }))
         );
-      });
-  }, []);
+      }
+    } catch (err) {
+      console.error("Error fetching sales:", err);
+    }
+  };
+
+  // initial fetch
+  fetchData();
+
+  // fetch every 500ms
+  const interval = setInterval(fetchData, 500);
+
+  // cleanup
+  return () => clearInterval(interval);
+}, []);
+
 
   // Filter sales for "delivery" and search across multiple fields
   const filteredSales = useMemo(() => {
@@ -120,7 +142,9 @@ const DeliveryTransactions = ({ sales, updateStatus }) => {
       const data = await res.json();
 
       if (!data.success && !Array.isArray(data.data)) {
-        alert("No data found to export.");
+          showAlert("ထုတ်ယူရန် အချက်အလက် မရှိပါ ", "error");
+       
+
         return;
       }
 
@@ -162,7 +186,8 @@ const DeliveryTransactions = ({ sales, updateStatus }) => {
         });
 
       if (filtered.length === 0) {
-        alert("No matching data to export.");
+          showAlert("ထုတ်ယူရန် အချက်အလက် မရှိပါ ", "error");
+      
         return;
       }
 

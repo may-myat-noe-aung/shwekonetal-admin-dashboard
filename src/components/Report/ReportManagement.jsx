@@ -6,6 +6,7 @@ import ReportBuySellChart from "./ReportBuySellChart";
 import ReportBuySellRatio from "./ReportBuySellRatio";
 import ServerToggle from "./ServerToggle";
 import DeliveryTable from "./DeliveryTable";
+import { useAlert } from "../../AlertProvider";
 
 export default function ReportManagement() {
   const [initialGold, setInitialGold] = useState({
@@ -24,6 +25,8 @@ export default function ReportManagement() {
   const [buys, setBuys] = useState([]);
   const [sells, setSells] = useState([]);
   const [alertMsg, setAlertMsg] = useState("");
+
+  const { showAlert } = useAlert();
 
   // Fetch initial gold from API
   useEffect(() => {
@@ -61,6 +64,11 @@ export default function ReportManagement() {
     // ✅ Close modal immediately when Confirm is clicked
     setPasscodeModalOpen(false);
 
+    if (!passcodeInput) {
+      showAlert("Passcode ထည့်ပေးပါ", "warning");
+      return;
+    }
+
     try {
       // 🟡 Step 1: Verify passcode
       const verifyRes = await fetch(
@@ -76,7 +84,10 @@ export default function ReportManagement() {
       console.log("🔐 Passcode verify response:", verifyData);
 
       if (!verifyData.success && verifyData.message !== "verified") {
-        alert("❌ Incorrect passcode!");
+        showAlert(
+          verifyData?.message || verifyData?.error || "Passcode မှားနေပါသည်",
+          "error"
+        );
         return;
       }
 
@@ -94,7 +105,11 @@ export default function ReportManagement() {
       });
 
       const data = await res.json();
-      console.log("💰 Add gold response:", data);
+
+      if (!res.ok) {
+        // This will catch server errors with JSON messages
+        throw new Error(data.message || data.error || "Failed to add gold");
+      }
 
       if (data.success || data.message === "updated" || data.status === "ok") {
         setInitialGold({
@@ -105,61 +120,13 @@ export default function ReportManagement() {
         setTotalStr(data.total || "");
         setAddGold({ kyat: 0, petha: 0, yway: 0 });
 
-        alert("✅ Gold updated successfully!");
+        showAlert("Stock အသစ်ကို အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ", "success");
       } else {
-        alert(data.message || "Failed to add gold");
+        showAlert(data.message || "Failed to add gold", "error");
       }
-    } catch (err) {
-      console.error("❌ Error verifying passcode or adding gold:", err);
-      alert("Error contacting server");
-    }
-  };
-
-  const handlePasswordSubmit = async () => {
-    if (!password) {
-      alert("Please enter password");
-      return;
-    }
-
-    try {
-      // --- Verify passcode dynamically ---
-      const verifyResponse = await axios.post(
-        "http://38.60.244.74:3000/admin/verify-owner-passcode",
-        { passcode: password }
-      );
-
-      if (!verifyResponse.data.success) {
-        alert("Incorrect password!");
-        return;
-      }
-
-      // --- Submit gold update ---
-      await axios.post(`${API_BASE}/formula`, { kyat, yway });
-
-      const newRow = {
-        kyat,
-        yway,
-        id: `FM${Date.now()}`,
-        date: new Date().toLocaleDateString(),
-        time: new Date().toLocaleTimeString(),
-      };
-
-      setGoldList((prev) => [...prev, newRow]);
-      setLastUpdate({ kyat, yway });
-
-      // ✅ Close modal first
-      setShowModal(false);
-
-      // ✅ Reset input & passcode after closing
-      setKyat(1);
-      setPassword("");
-
-      // ✅ Then show success alert after slight delay
-      setTimeout(() => {
-        alert("Gold conversion updated successfully!");
-      }, 300);
-    } catch (err) {
-      alert("Verification failed!");
+    } catch (error) {
+      const apiMessage = error.message || error.error || "Something went wrong";
+      showAlert(apiMessage, "error");
     }
   };
 
@@ -216,7 +183,7 @@ export default function ReportManagement() {
                   return (
                     <div key={k} className="flex flex-col">
                       <label className="text-xs text-neutral-400 mb-2">
-                        {labelMap[i]}
+                        {labelMap[i]}alert
                       </label>
                       <input
                         type="text"
@@ -256,6 +223,11 @@ export default function ReportManagement() {
                         }}
                         className="w-20 px-2 py-1 bg-neutral-950 border border-neutral-700 rounded-lg text-sm"
                         placeholder={labelMap[i]}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleAddGold();
+                          }
+                        }}
                       />
                     </div>
                   );
@@ -286,7 +258,6 @@ export default function ReportManagement() {
           <BuyTable />
           <SellTable />
           <DeliveryTable />
-          
         </section>
 
         {/* --- Charts --- */}

@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect } from "react";
+
+  import React, { useState, useEffect } from "react";
 import { X, Bell, ShieldCheck, User, SunMoon, Download, Shield } from "lucide-react";
 import CreateAccount from "./CreateAccount"; 
 import SecurityTab from "./SecurityTab";
@@ -10,12 +11,6 @@ import ManagerSellerList from "./ManagerSellerList";
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState("overview");
   const [account, setAccount] = useState(null);
-  const [security, setSecurity] = useState({
-    email: "",
-    passcode: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
 
   const [quickActions] = useState([
     { icon: <Shield className="h-4 w-4" />, label: "Security", action:"security" },
@@ -24,57 +19,46 @@ export default function AdminSettings() {
 
   const adminId = localStorage.getItem("adminId");
 
-  useEffect(() => {
-    if (!adminId) return;
+useEffect(() => {
+  if (!adminId) return;
+
+  // Fetch function
+  const fetchAdmin = () => {
     fetch(`http://38.60.244.74:3000/admin/${adminId}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && data.data.length > 0) setAccount(data.data[0]);
+        if (data.success && data.data.length > 0) {
+          setAccount(data.data[0]);
+        }
       })
       .catch((err) => console.error("Failed to fetch admin data:", err));
-  }, [adminId]);
-
-  const handleSecurityChange = (field, value) => {
-    setSecurity((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleVerifyPasscode = () => {
-    if (security.passcode === "123456") setSecurity((prev) => ({ ...prev, isVerified: true }));
-    else alert("Invalid passcode ❌");
-  };
+  // First fetch immediately
+  fetchAdmin();
 
-  const handleCancelSecurity = () => {
-    setSecurity({
-      email: "",
-      currentPassword: "",
-      passcode: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-  };
+  // Live update every 500ms
+  const interval = setInterval(fetchAdmin, 500);
 
-  const handleChangePassword = () => {
-    if (security.newPassword !== security.confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-    alert("Passcode changed successfully ✅");
-  };
+  // Cleanup when component unmount
+  return () => clearInterval(interval);
 
-  const tabList = [
-    { key: "overview", label: "Overview", icon: <User className="h-4 w-4" /> },
-    { key: "edit", label: "Edit Account", icon: <User className="h-4 w-4" /> },
-    { key: "security", label: "Security", icon: <ShieldCheck className="h-4 w-4" /> },
-    { key: "create", label: "Register Account", icon: <User className="h-4 w-4" /> },
-    { key: "managerSellerList", label: "Manager & Seller List", icon: <User className="h-4 w-4" /> },
-  ];
+}, [adminId]);
+
 
   return (
-    <div className="bg-neutral-950 text-neutral-100 p-4  md:h-[8.5vh] xl:h-[90vh] mx-auto max-w-7xl overflow-hidden">
+    <div className="bg-neutral-950 text-neutral-100 p-4  md:h-[100vh]  mx-auto max-w-7xl overflow-hidden">
+      
       {/* Horizontal Tabs */}
       <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-4 mb-6">
         <div className="flex space-x-2 overflow-x-auto">
-          {tabList.map((item) => (
+          {[
+            { key: "overview", label: "Overview", icon: <User className="h-4 w-4" /> },
+            { key: "edit", label: "Edit Account", icon: <User className="h-4 w-4" /> },
+            { key: "security", label: "Security", icon: <ShieldCheck className="h-4 w-4" /> },
+            { key: "create", label: "Register Account", icon: <User className="h-4 w-4" /> },
+            { key: "managerSellerList", label: "Manager & Seller List", icon: <User className="h-4 w-4" /> },
+          ].map((item) => (
             <button
               key={item.key}
               onClick={() => setActiveTab(item.key)}
@@ -91,10 +75,12 @@ export default function AdminSettings() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Layout */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Left Column - Profile + Quick Actions */}
+        
+        {/* Left Column */}
         <div className="col-span-1 space-y-6">
+          
           {/* Profile Card */}
           <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6">
             <h3 className="font-bold text-lg mb-4 text-center text-amber-400">Profile</h3>
@@ -105,7 +91,7 @@ export default function AdminSettings() {
                     src={
                       account.photo
                         ? `http://38.60.244.74:3000/uploads/${account.photo}`
-                        : "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fFByb2ZpbGV8ZW58MHx8MH"
+                        : "https://images.unsplash.com/photo-1438761681033-6461ffad8d80"
                     }
                     alt="Profile"
                     className="rounded-full w-20 h-20 object-cover mb-3 border-2 border-amber-400"
@@ -139,20 +125,14 @@ export default function AdminSettings() {
           </div>
         </div>
 
-        {/* Right Column - Tabs */}
-      <div className="col-span-1 md:col-span-3 bg-neutral-900 rounded-2xl border border-neutral-800 p-6">
-
+        {/* Right Column */}
+        <div className="col-span-1 md:col-span-3 bg-neutral-900 rounded-2xl border border-neutral-800 p-6">
           {activeTab === "overview" && <OverviewTab account={account} />}
           {activeTab === "edit" && <EditAccountTab account={account} setAccount={setAccount} />}
-          {activeTab === "security" && (
-            <SecurityTab
-              security={security}
-              handleSecurityChange={handleSecurityChange}
-              handleVerifyPasscode={handleVerifyPasscode}
-              handleCancelSecurity={handleCancelSecurity}
-              handleChangePassword={handleChangePassword}
-            />
-          )}
+          
+          {/* ✅ Clean — No Props Passed */}
+          {activeTab === "security" && <SecurityTab />}
+
           {activeTab === "create" && <CreateAccount />}
           {activeTab === "managerSellerList" && <ManagerSellerList />}
         </div>

@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Mail,
@@ -9,14 +11,17 @@ import {
   Shield,
   UserPlus,
   Download,
+  Edit,
 } from "lucide-react";
 import SummaryCards from "./SummaryCards";
 import UserDetailModal from "./UserDetailModal.jsx";
 import UserConfirmTable from "./UserConfirmTable.jsx";
 import AgentTable from "./AgentTable.jsx";
+import { useAlert } from "../../AlertProvider";
 
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import EditEmailButton from "./EditEmailButton.jsx";
 
 export default function UserTableWithSummary() {
   const [users, setUsers] = useState([]);
@@ -28,6 +33,7 @@ export default function UserTableWithSummary() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [csvMessage, setCsvMessage] = useState("");
+  const { showAlert } = useAlert();
   const pageSize = 5;
   const pagesPerWindow = 5;
 
@@ -35,6 +41,7 @@ export default function UserTableWithSummary() {
 
   // --- API fetch after 500ms
   const [newUsersApiCount, setNewUsersApiCount] = useState(0); // ✅ New Users from API
+  // --- Fetch users every 500ms
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -42,27 +49,42 @@ export default function UserTableWithSummary() {
         if (!res.ok) throw new Error("Failed to fetch users");
 
         const data = await res.json(); // { new_users: 0, users: [...] }
-
         setNewUsersApiCount(data.new_users || 0);
 
         const filtered = (data.users || []).filter((u) =>
-          ["approved", "pending"].includes(u.status?.toLowerCase())
+          ["approved"].includes(u.status?.toLowerCase())
         );
 
         setUsers(filtered);
       } catch (err) {
         console.error(err);
-        alert("Cannot load users");
+        showAlert("users အချက်အလက်များကို load ဆွဲလို့မရပါ။ သင့် internet connection ကို စစ်ဆေးပါ", "warning");
       }
     };
 
-    // ပထမ fetch တစ်ခါ
     fetchUsers();
 
-    // 500ms အကြိမ် fetch
-    const intervalId = setInterval(fetchUsers, 500);
+    const intervalId = setInterval(fetchUsers, 500); // optional: increase to 5000ms for less load
+    return () => clearInterval(intervalId);
+  }, []);
 
-    // Cleanup on unmount
+  // --- Fetch summary every 10s
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const res = await fetch("http://38.60.244.74:3000/users-summarys");
+        if (!res.ok) throw new Error("Failed to fetch summary");
+        const data = await res.json();
+        setSummary(data);
+      } catch (err) {
+        console.error(err);
+        showAlert("users အချက်အလက်များကို load ဆွဲလို့မရပါ။ သင့် internet connection ကို စစ်ဆေးပါ", "warning");
+      }
+    };
+
+    fetchSummary();
+
+    const intervalId = setInterval(fetchSummary, 10000);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -70,6 +92,13 @@ export default function UserTableWithSummary() {
   const totalUsers = users.length;
   const approvedCount = users.filter((u) => u.status === "approved").length;
   const pendingCount = users.filter((u) => u.status === "pending").length;
+
+  const [summary, setSummary] = useState({
+    total_users: 0,
+    approved_users: 0,
+    pending_users: 0,
+    today_approved_users: 0,
+  });
 
   // --- Delete User
   const handleDelete = async (user) => {
@@ -336,10 +365,10 @@ export default function UserTableWithSummary() {
       <div className="mx-auto max-w-7xl px-4 py-6 space-y-6">
         {/* Summary Section */}
         <SummaryCards
-          total={totalUsers}
-          approved={approvedCount}
-          pending={pendingCount}
-          newUsers={newUsersApiCount}
+          total={summary.total_users}
+          approved={summary.approved_users}
+          pending={summary.pending_users}
+          newUsers={summary.today_approved_users}
         />
 
         {/* Confirm Modal */}
@@ -487,10 +516,10 @@ export default function UserTableWithSummary() {
                       <td className="px-2 py-2 hidden md:table-cell">
                         {u.id_type}
                       </td>
-                      <td className="px-2 py-2 break-words whitespace-normal hidden lg:table-cell">
+                      <td className="px-2 py-2 break-words hidden lg:table-cell">
                         {u.id_number}
                       </td>
-                      <td className="px-2 py-2 break-words whitespace-normal hidden lg:table-cell">
+                      <td className="px-2 py-2 hidden lg:table-cell max-w-[130px] xl:max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap">
                         {u.email}
                       </td>
                       <td className="px-2 py-2 hidden md:table-cell">
@@ -505,17 +534,27 @@ export default function UserTableWithSummary() {
                             }).format(new Date(u.create_at))
                           : "-"}
                       </td>
-                      <td className="px-2 py-2 hidden md:table-cell">
-                        {u.state} / {u.city}
-                      </td>
-                      <td className="px-2 py-2">
-                        <button
-                          onClick={() => setViewUser(u)}
-                          className="flex items-center gap-1 px-2 py-1 bg-sky-600 hover:bg-sky-700 rounded text-white text-xs md:text-sm"
-                        >
-                          <Eye className="h-4 w-4" /> view
-                        </button>
-                      </td>
+                                   <td
+  className="px-2 py-2 hidden md:table-cell 
+             lg:max-w-[100px] lg:overflow-hidden 
+             lg:text-ellipsis lg:whitespace-nowrap"
+>
+  {u.state} / {u.city}
+</td>
+                 
+                <td className="px-2 py-2 flex items-center justify-center gap-2 
+               lg:flex-col  xl:flex-row">
+  <button
+    onClick={() => setViewUser(u)}
+    className="flex items-center gap-1 px-2 py-1 bg-sky-600 hover:bg-sky-700 rounded text-white text-xs md:text-sm"
+  >
+    <Eye className="h-4 w-4" /> view
+  </button>
+
+  <EditEmailButton user={u} />
+</td>
+
+                      {/* </td> */}
                     </tr>
                   ))
                 )}

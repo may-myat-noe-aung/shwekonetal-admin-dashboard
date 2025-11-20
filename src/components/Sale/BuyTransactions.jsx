@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { Info, Search, Download, ChevronUp, ChevronDown } from "lucide-react";
 import TransactionPopup from "./TransactionPopup.jsx";
@@ -5,6 +6,9 @@ import { useNavigate } from "react-router-dom";
 
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+
+import { useAlert } from "../../AlertProvider";
+
 
 const BuyTransactions = ({ sales, updateStatus }) => {
   const [selectedTxn, setSelectedTxn] = useState(null);
@@ -24,6 +28,12 @@ const BuyTransactions = ({ sales, updateStatus }) => {
 
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+
+  const { showAlert } = useAlert();
+
+
+ 
+  
 
   // --- Filter sales by type "buy" with search across all fields ---
   const filteredSales = useMemo(() => {
@@ -73,7 +83,7 @@ const BuyTransactions = ({ sales, updateStatus }) => {
         const data = await res.json();
         
         if (!data.success && !Array.isArray(data.data)) {
-          alert("No data found to export.");
+          showAlert("ထုတ်ယူရန် အချက်အလက် မရှိပါ ", "error");
           return;
         }
   
@@ -115,7 +125,7 @@ const BuyTransactions = ({ sales, updateStatus }) => {
           });
   
         if (filtered.length === 0) {
-          alert("No matching data to export.");
+       showAlert("ထုတ်ယူရန် အချက်အလက် မတွေ့ပါ ", "error");
           return;
         }
   

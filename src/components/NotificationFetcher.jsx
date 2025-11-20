@@ -5,12 +5,11 @@ export default function NotificationFetcher() {
   const [notifications, setNotifications] = useState([]);
 
   const playSound = () => {
-    const audio = new Audio("/notification.wav");
+    const audio = new Audio("/notification.mp3");
     audio.volume = 1;
     audio.play().catch(() => {});
   };
 
-  // Load saved notifications on mount
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("notifications")) || [];
     setNotifications(saved);
@@ -26,7 +25,6 @@ export default function NotificationFetcher() {
           { url: "http://38.60.244.74:3000/selling-prices-data", type: "selling", message: "New selling price has been updated!" },
           { url: "http://38.60.244.74:3000/formula", type: "formula", message: "New formula has been updated!" },
 
-          // ✅ Newly added notification sources
           { url: "http://38.60.244.74:3000/buyTable", type: "buy-table", message: "New buy record has been approved!" },
           { url: "http://38.60.244.74:3000/sellTable", type: "sell-table", message: "New sell record has been approved!" },
           { url: "http://38.60.244.74:3000/deliTable", type: "delivery-table", message: "New delivery record has been approved!" },
@@ -42,7 +40,40 @@ export default function NotificationFetcher() {
 
           let currentCount = 0;
 
-          // Handle /sales separately
+          /*
+          ====================================================
+          SPECIAL FIX FOR NEW USER NOTIFICATION (MAIN BUG FIX)
+          ====================================================
+          */
+          if (e.type === "new-user") {
+
+            // your API structure:
+            // { new_users: number, users: [...] }
+
+            const users = Array.isArray(data?.users) ? data.users : [];
+            const newUsersCount = typeof data?.new_users === "number" ? data.new_users : users.length;
+
+            // count based on new users
+            currentCount = newUsersCount;
+
+            if (currentCount > prevCount) {
+              newNotis.push({
+                type: "new-user",
+                message: e.message,
+                time: new Date().toLocaleTimeString(),
+                read: false,
+              });
+            }
+
+            localStorage.setItem(key, currentCount.toString());
+            return;
+          }
+
+          /*
+          ===========================================
+          SALES — special logic (unchanged)
+          ===========================================
+          */
           if (e.type === "sales") {
             const salesData = Array.isArray(data?.data) ? data.data : [];
             currentCount = salesData.length;
@@ -67,19 +98,31 @@ export default function NotificationFetcher() {
                 });
               }
             }
-          } else {
-            // ✅ For other APIs, including new ones
-            const dataArr = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-            currentCount = dataArr.length;
 
-            if (currentCount > prevCount) {
-              newNotis.push({
-                type: e.type,
-                message: e.message,
-                time: new Date().toLocaleTimeString(),
-                read: false,
-              });
-            }
+            localStorage.setItem(key, currentCount.toString());
+            return;
+          }
+
+          /*
+          ===========================================
+          DEFAULT HANDLING (ALL OTHER API)
+          ===========================================
+          */
+          const dataArr = Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data)
+            ? data
+            : [];
+
+          currentCount = dataArr.length;
+
+          if (currentCount > prevCount) {
+            newNotis.push({
+              type: e.type,
+              message: e.message,
+              time: new Date().toLocaleTimeString(),
+              read: false,
+            });
           }
 
           localStorage.setItem(key, currentCount.toString());

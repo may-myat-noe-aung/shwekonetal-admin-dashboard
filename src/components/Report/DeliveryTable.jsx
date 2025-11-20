@@ -23,27 +23,38 @@ export default function DeliveryTable() {
 
   const itemsPerPage = 6;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/deliTable`);
-        const result = await res.json();
-        if (result.success) {
-          const formatted = result.data.map((item) => ({
-            ...item,
-            date: new Date(item.created_at),
-          }));
-          setData(formatted);
-          setGoldTotal(result.goldTotal);
-        }
-      } catch (err) {
-        console.error("Error fetching delivery table:", err);
-      } finally {
-        setLoading(false);
+useEffect(() => {
+  let intervalId;
+
+  const fetchData = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/deliTable`);
+      const result = await res.json();
+      if (result.success) {
+        const formatted = result.data.map((item) => ({
+          ...item,
+          date: new Date(item.created_at),
+        }));
+        setData(formatted);
+        setGoldTotal(result.goldTotal);
       }
-    };
-    fetchData();
-  }, []);
+    } catch (err) {
+      console.error("Error fetching delivery table:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // initial fetch
+  fetchData();
+
+  // fetch every 500ms
+  intervalId = setInterval(fetchData, 500);
+
+  // cleanup interval on unmount
+  return () => clearInterval(intervalId);
+}, []);
+
 
   const requestSort = (key) => {
     let direction = "asc";
@@ -79,7 +90,7 @@ export default function DeliveryTable() {
       item.fullname?.toLowerCase().includes(term) ||
       (item.agent
         ? item.agent.toLowerCase().includes(term)
-        : "normal".includes(term));
+        : "normal".includes(term)) ||
     item.seller?.toLowerCase().includes(term) ||
       item.manager?.toLowerCase().includes(term) ||
       item.service_fees?.toString().toLowerCase().includes(term) ||
@@ -485,7 +496,7 @@ export default function DeliveryTable() {
                     </p>
                     <p>
                       <span className="text-neutral-400">Agent -</span>{" "}
-                      {selectedTxn.agent || "-"}
+                      {selectedTxn.agent || "Normal"}
                     </p>
                   </div>
                 </div>

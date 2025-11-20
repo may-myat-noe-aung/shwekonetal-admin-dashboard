@@ -5,7 +5,7 @@ export default function NotificationFetcherForSeller() {
   const [notifications, setNotifications] = useState([]);
 
   const playSound = () => {
-    const audio = new Audio("/notification.wav");
+    const audio = new Audio("/notification.mp3");
     audio.volume = 1;
     audio.play().catch(() => {});
   };

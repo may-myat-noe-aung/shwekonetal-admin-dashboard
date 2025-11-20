@@ -13,6 +13,8 @@ import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
+import { useAlert } from "../../AlertProvider";
+
 const SellTransactions = ({ sales, updateStatus }) => {
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [previewImg, setPreviewImg] = useState(null);
@@ -30,6 +32,8 @@ const SellTransactions = ({ sales, updateStatus }) => {
 
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+
+  const { showAlert } = useAlert();
 
   // Filtered Sales based on search
   const filteredSales = useMemo(() => {
@@ -82,7 +86,8 @@ const SellTransactions = ({ sales, updateStatus }) => {
       const data = await res.json();
 
       if (!data.success && !Array.isArray(data.data)) {
-        alert("No data found to export.");
+        showAlert("ထုတ်ယူရန် အချက်အလက် မရှိပါ ", "error");
+
         return;
       }
 
@@ -110,7 +115,8 @@ const SellTransactions = ({ sales, updateStatus }) => {
         });
 
       if (filtered.length === 0) {
-        alert("No matching data to export.");
+        showAlert("ထုတ်ယူရန် အချက်အလက် မရှိပါ ", "error");
+
         return;
       }
 
@@ -320,12 +326,8 @@ const SellTransactions = ({ sales, updateStatus }) => {
                     )}
                   </td>
 
-                  <td className="py-2 px-3 ">
-                    {s.date.toLocaleTimeString()}
-                  </td>
-                  <td className="py-2 px-3 capitalize ">
-                    {s.method}
-                  </td>
+                  <td className="py-2 px-3 ">{s.date.toLocaleTimeString()}</td>
+                  <td className="py-2 px-3 capitalize ">{s.method}</td>
                   <td
                     className={`py-2 px-3 capitalize font-semibold  ${
                       s.status === "approved"

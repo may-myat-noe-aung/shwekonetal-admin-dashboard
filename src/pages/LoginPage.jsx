@@ -203,11 +203,13 @@ import React, { useState, useRef, useEffect } from "react";
 import { Lock, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import bgImage from "../assets/images/other_photo/gold4.jpg"; // <- your local image path
+import { useAlert } from "../AlertProvider";
 
 export default function SignIn() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { showAlert } = useAlert();
 
   // Refs for inputs and button
   const emailRef = useRef(null);
@@ -221,7 +223,7 @@ export default function SignIn() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!email || !password) return alert("Please fill all fields");
+    if (!email || !password) return showAlert("Fields များအားလုံး ဖြည့်ရန်လိုအပ်ပါသည်");
 
     try {
       const res = await fetch("http://38.60.244.74:3000/login-admin", {
@@ -235,20 +237,22 @@ export default function SignIn() {
       if (res.ok) {
         localStorage.setItem("adminRole", data.role);
         localStorage.setItem("adminId", data.id);
-        alert(data.message || "Login successful!");
+        showAlert(data.message || "Login successful!", "success");
         if (data.role === "owner") navigate("/");
         else if (data.role === "manager") navigate("/sale");
         else if (data.role === "seller") navigate("/sale");
       } else {
         localStorage.removeItem("adminRole");
         localStorage.removeItem("adminId");
-        alert(data.message || "❌ Login failed");
+        showAlert(data.message || "Login failed", "error");
       }
     } catch (err) {
       console.error(err);
       localStorage.removeItem("adminRole");
       localStorage.removeItem("adminId");
-      alert("❌ Something went wrong");
+      const apiMessage =
+        err.message || err.error || "Something went wrong";
+        showAlert(apiMessage, "error");
     }
   };
 
@@ -259,7 +263,7 @@ export default function SignIn() {
     >
       <div className="bg-neutral-900/90 border border-neutral-700 rounded-2xl p-8 w-full max-w-sm shadow-xl backdrop-blur-sm">
         <h2 className="text-2xl font-semibold text-center mb-6 text-yellow-400">
-          Admin Sign In
+          ရွှေကုန်သည် Sign In
         </h2>
 
         <form onSubmit={handleLogin} className="space-y-4">

@@ -521,29 +521,37 @@ export default function ConfirmUserDetailModal({
 
           {/* Info Grid */}
           <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-white/80 text-sm mb-6">
-            <div>
+            <div className="mb-2">
               <p className="text-white/500 mb-1 text-xs ">ID Type</p>
               <p>{viewUser.id_type}</p>
             </div>
-            <div>
+            <div className="mb-2">
               <p className="text-white/500 mb-1 text-xs">ID Number</p>
               <p>{viewUser.id_number}</p>
             </div>
-            <div>
+            <div className="mb-2">
+              <p className="text-white/500 mb-1 text-xs">Agent</p>
+              <p>{viewUser.agent || "Normal"}</p>
+            </div>
+            <div className="mb-2">
+               <p className="text-white/500 mb-1 text-xs">Gender</p>
+              <p>{viewUser.gender}</p>
+            </div>
+            <div className="mb-2">
               <p className="text-white/500 mb-1 text-xs">Phone</p>
               <p>{viewUser.phone}</p>
             </div>
-            <div>
+            <div className="mb-2">
               <p className="text-white/500 mb-1 text-xs">State / City</p>
               <p>
                 {viewUser.state} / {viewUser.city}
               </p>
             </div>
-            <div>
+            <div className="mb-2">
               <p className="text-white/500 mb-1 text-xs">Address</p>
               <p>{viewUser.address}</p>
             </div>
-            <div>
+            <div className="mb-2">
               <p className="text-white/500 mb-1 text-xs">Status</p>
               <span
                 className={`px-3 py-1 rounded-full text-xs ${

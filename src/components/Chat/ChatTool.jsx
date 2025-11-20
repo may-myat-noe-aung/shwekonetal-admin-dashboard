@@ -1,10 +1,11 @@
+
 // import React, { useState, useEffect, useRef } from "react";
 // import { Send, CheckCheck, SmilePlus, Image, Loader2 } from "lucide-react";
 
-// const API_BASE = "http://38.60.244.74:3000";
-// const WS_URL = "ws://38.60.244.74:3000";
-
 // const ChatPage = () => {
+//   const API_BASE = "http://38.60.244.74:3000";
+//   const WS_URL = "ws://38.60.244.74:3000";
+
 //   const [users, setUsers] = useState([]);
 //   const [selectedUser, setSelectedUser] = useState(null);
 //   const [messages, setMessages] = useState({});
@@ -20,30 +21,37 @@
 //   const [previewPhoto, setPreviewPhoto] = useState(null);
 //   const [loadingMessages, setLoadingMessages] = useState(false);
 
+//   // ===== NEW: Sticker Passcode State & Handlers =====
+//   const [showStickerPasscodeModal, setShowStickerPasscodeModal] =
+//     useState(false);
+//   const [stickerPasscode, setStickerPasscode] = useState("");
+//   const [stickerFile, setStickerFile] = useState(null);
+
 //   // ===== fetch users =====
 //   useEffect(() => {
 //     const fetchUsers = async () => {
 //       try {
 //         const res = await fetch(`${API_BASE}/users`);
 //         const data = await res.json();
-//         const approved = Array.isArray(data)
-//           ? data.filter((u) => (u.status ? u.status === "approved" : true))
-//           : [];
-//         const list = approved.length
-//           ? approved
-//           : Array.isArray(data)
-//           ? data
-//           : [];
+
+//         // Correct response parsing
+//         const users = Array.isArray(data.users) ? data.users : [];
+
+//         const approved = users.filter((u) => u.status === "approved");
+//         const list = approved.length ? approved : users;
+
 //         setUsers(list);
 //         if (list.length > 0 && !selectedUser) setSelectedUser(list[0]);
 
-//         // 🟡 fetch all last messages + unseen counts once
+//         // preload messages
 //         const all = {};
 //         const counts = {};
+
 //         for (const u of list) {
 //           try {
 //             const resMsg = await fetch(`${API_BASE}/messages?userId=${u.id}`);
 //             const msgs = await resMsg.json();
+
 //             const formatted = (Array.isArray(msgs) ? msgs : []).map((msg) => ({
 //               from: msg.sender === "admin" ? "admin" : "user",
 //               text: msg.content,
@@ -52,23 +60,24 @@
 //               seen: !!msg.seen,
 //               createdAt: msg.created_at,
 //             }));
+
 //             all[u.id] = formatted;
 
-//             // unseen count
-//             const unseen = formatted.filter(
+//             counts[u.id] = formatted.filter(
 //               (m) => m.from === "user" && !m.seen
 //             ).length;
-//             counts[u.id] = unseen;
 //           } catch (e) {
 //             console.error("Msg preload fail for", u.id, e);
 //           }
 //         }
+
 //         setMessages(all);
 //         setUnreadCounts(counts);
 //       } catch (err) {
 //         console.error("Failed to fetch users:", err);
 //       }
 //     };
+
 //     fetchUsers();
 //   }, []);
 
@@ -110,14 +119,14 @@
 //         }));
 //         setMessages((prev) => ({ ...prev, [selectedUser.id]: formatted }));
 
-//         // ✅ mark as seen in DB
+//         //  mark as seen in DB
 //         await fetch(`${API_BASE}/messages/mark-seen`, {
 //           method: "POST",
 //           headers: { "Content-Type": "application/json" },
 //           body: JSON.stringify({ userId: selectedUser.id }),
 //         });
 
-//         // ✅ reset unread UI count
+//         //  reset unread UI count
 //         setUnreadCounts((prev) => ({ ...prev, [selectedUser.id]: 0 }));
 //       } catch (err) {
 //         console.error("Failed to fetch messages:", err);
@@ -129,7 +138,7 @@
 //   useEffect(() => {
 //     if (!selectedUser) return;
 //     const fetchMessages = async () => {
-//       setLoadingMessages(true); // ✅ start loading
+//       setLoadingMessages(true); //  start loading
 //       try {
 //         const res = await fetch(
 //           `${API_BASE}/messages?userId=${selectedUser.id}`
@@ -145,19 +154,19 @@
 //         }));
 //         setMessages((prev) => ({ ...prev, [selectedUser.id]: formatted }));
 
-//         // ✅ mark as seen in DB
+//         //  mark as seen in DB
 //         await fetch(`${API_BASE}/messages/mark-seen`, {
 //           method: "POST",
 //           headers: { "Content-Type": "application/json" },
 //           body: JSON.stringify({ userId: selectedUser.id }),
 //         });
 
-//         // ✅ reset unread UI count
+//         //  reset unread UI count
 //         setUnreadCounts((prev) => ({ ...prev, [selectedUser.id]: 0 }));
 //       } catch (err) {
 //         console.error("Failed to fetch messages:", err);
 //       } finally {
-//         setLoadingMessages(false); // ✅ stop loading
+//         setLoadingMessages(false); //  stop loading
 //       }
 //     };
 //     fetchMessages();
@@ -223,7 +232,7 @@
 //               : (prev[userIdRelated] || 0) + 1,
 //         }));
 
-//         // ✅ Auto mark seen if that user is open
+//         //  Auto mark seen if that user is open
 //         if (selectedUser?.id === userIdRelated) {
 //           fetch(`${API_BASE}/messages/mark-seen`, {
 //             method: "POST",
@@ -313,13 +322,35 @@
 //     reader.readAsDataURL(file);
 //   };
 
-//   const handleUploadSticker = async (e) => {
+//   const handleUploadStickerWithPasscode = (e) => {
 //     const file = e.target.files[0];
 //     if (!file) return;
-//     const formData = new FormData();
-//     formData.append("file", file);
-//     formData.append("name", file.name || "sticker.png");
+//     setStickerFile(file); // store file temporarily
+//     setShowStickerPasscodeModal(true); // show passcode modal
+//   };
+
+//   const handleStickerPasscodeSubmit = async () => {
+//     if (!stickerFile) return;
+
 //     try {
+//       const verifyRes = await fetch(`${API_BASE}/admin/verify-admin-passcode`, {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ passcode: stickerPasscode }),
+//       });
+
+//       const verifyData = await verifyRes.json();
+
+//       if (!verifyRes.ok) {
+//         alert(verifyData.message);
+//         return;
+//       }
+
+//       const formData = new FormData();
+//       formData.append("file", stickerFile);
+//       formData.append("name", stickerFile.name || "sticker.png");
+//       formData.append("passcode", stickerPasscode);
+
 //       const res = await fetch(`${API_BASE}/stickers`, {
 //         method: "POST",
 //         body: formData,
@@ -329,10 +360,36 @@
 //         data.url && data.url.startsWith("http")
 //           ? data.url
 //           : `${API_BASE}${data.url || data.path || ""}`;
-//       if (url) setStickers((prev) => [...prev, { id: Date.now(), url }]);
+
+//       if (url) {
+//         setStickers((prev) => [...prev, { id: Date.now(), url }]);
+
+//         if (data.message) {
+//           alert(data.message);
+//         } else {
+//           alert("Sticker အောင်မြင်စွာ upload လုပ်ပြီးပါပြီ ");
+//         }
+//       }
 //     } catch (err) {
 //       console.error("Sticker upload failed:", err);
+
+//       if (err.response?.data?.message) {
+//         alert(err.response.data.message);
+//       } else {
+//         alert("Sticker upload မအောင်မြင်ပါ ");
+//       }
+//     } finally {
+//       // Reset state
+//       setStickerFile(null);
+//       setStickerPasscode("");
+//       setShowStickerPasscodeModal(false);
 //     }
+//   };
+
+//   const cancelStickerPasscode = () => {
+//     setStickerFile(null);
+//     setStickerPasscode("");
+//     setShowStickerPasscodeModal(false);
 //   };
 
 //   const shownUsers = users
@@ -379,7 +436,7 @@
 //                 className="w-full bg-neutral-800 border border-neutral-700 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 placeholder-neutral-500"
 //               />
 //             </div>
-//             <div className="flex-1 overflow-y-auto">
+//             <div className="flex-1 overflow-y-auto custom-scrollbar">
 //               {(shownUsers.length ? shownUsers : users).map((user) => (
 //                 <div
 //                   key={user.id}
@@ -632,8 +689,9 @@
 //                       type="file"
 //                       accept="image/*"
 //                       className="hidden"
-//                       onChange={handleUploadSticker}
+//                       onChange={handleUploadStickerWithPasscode}
 //                     />
+
 //                     {stickers.map((s, idx) => (
 //                       <img
 //                         key={s.id || idx}
@@ -660,6 +718,43 @@
 //                 />
 //               </div>
 //             )}
+
+//             {showStickerPasscodeModal && (
+//               <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+//                 <div className="bg-neutral-900 p-6 rounded-2xl w-80">
+//                   <h2 className="text-neutral-100 font-semibold mb-4 text-center">
+//                     Enter Passcode
+//                   </h2>
+//                   <input
+//                     type="password"
+//                     value={stickerPasscode}
+//                     onChange={(e) => setStickerPasscode(e.target.value)}
+//                     placeholder="Passcode"
+//                     className="w-full px-4 py-2 mb-4 rounded-lg bg-neutral-800 border border-neutral-700 text-neutral-100 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+//                     onKeyDown={(e) => {
+//                       if (e.key === "Enter") {
+//                         handleStickerPasscodeSubmit();
+//                       }
+//                     }}
+//                     autoFocus
+//                   />
+//                   <div className="flex justify-between gap-2">
+//                     <button
+//                       onClick={cancelStickerPasscode}
+//                       className="px-4 py-2 bg-neutral-700 rounded-lg hover:bg-neutral-600 transition-colors"
+//                     >
+//                       Cancel
+//                     </button>
+//                     <button
+//                       onClick={handleStickerPasscodeSubmit}
+//                       className="px-4 py-2 bg-yellow-500 rounded-lg hover:bg-yellow-600 text-black transition-colors"
+//                     >
+//                       Confirm
+//                     </button>
+//                   </div>
+//                 </div>
+//               </div>
+//             )}
 //           </div>
 //         </div>
 //       </div>
@@ -669,8 +764,11 @@
 
 // export default ChatPage;
 
+
 import React, { useState, useEffect, useRef } from "react";
 import { Send, CheckCheck, SmilePlus, Image, Loader2 } from "lucide-react";
+import { useAlert } from "../../AlertProvider";
+
 
 const ChatPage = () => {
   const API_BASE = "http://38.60.244.74:3000";
@@ -690,6 +788,9 @@ const ChatPage = () => {
   const wsRef = useRef(null);
   const [previewPhoto, setPreviewPhoto] = useState(null);
   const [loadingMessages, setLoadingMessages] = useState(false);
+
+  const { showAlert } = useAlert();
+
 
   // ===== NEW: Sticker Passcode State & Handlers =====
   const [showStickerPasscodeModal, setShowStickerPasscodeModal] =
@@ -743,7 +844,6 @@ const ChatPage = () => {
 
         setMessages(all);
         setUnreadCounts(counts);
-
       } catch (err) {
         console.error("Failed to fetch users:", err);
       }
@@ -790,14 +890,14 @@ const ChatPage = () => {
         }));
         setMessages((prev) => ({ ...prev, [selectedUser.id]: formatted }));
 
-        // ✅ mark as seen in DB
+        //  mark as seen in DB
         await fetch(`${API_BASE}/messages/mark-seen`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: selectedUser.id }),
         });
 
-        // ✅ reset unread UI count
+        //  reset unread UI count
         setUnreadCounts((prev) => ({ ...prev, [selectedUser.id]: 0 }));
       } catch (err) {
         console.error("Failed to fetch messages:", err);
@@ -809,7 +909,7 @@ const ChatPage = () => {
   useEffect(() => {
     if (!selectedUser) return;
     const fetchMessages = async () => {
-      setLoadingMessages(true); // ✅ start loading
+      setLoadingMessages(true); //  start loading
       try {
         const res = await fetch(
           `${API_BASE}/messages?userId=${selectedUser.id}`
@@ -825,19 +925,19 @@ const ChatPage = () => {
         }));
         setMessages((prev) => ({ ...prev, [selectedUser.id]: formatted }));
 
-        // ✅ mark as seen in DB
+        //  mark as seen in DB
         await fetch(`${API_BASE}/messages/mark-seen`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: selectedUser.id }),
         });
 
-        // ✅ reset unread UI count
+        //  reset unread UI count
         setUnreadCounts((prev) => ({ ...prev, [selectedUser.id]: 0 }));
       } catch (err) {
         console.error("Failed to fetch messages:", err);
       } finally {
-        setLoadingMessages(false); // ✅ stop loading
+        setLoadingMessages(false); //  stop loading
       }
     };
     fetchMessages();
@@ -903,7 +1003,7 @@ const ChatPage = () => {
               : (prev[userIdRelated] || 0) + 1,
         }));
 
-        // ✅ Auto mark seen if that user is open
+        //  Auto mark seen if that user is open
         if (selectedUser?.id === userIdRelated) {
           fetch(`${API_BASE}/messages/mark-seen`, {
             method: "POST",
@@ -1002,11 +1102,25 @@ const ChatPage = () => {
 
   const handleStickerPasscodeSubmit = async () => {
     if (!stickerFile) return;
+
     try {
+      const verifyRes = await fetch(`${API_BASE}/admin/verify-admin-passcode`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode: stickerPasscode }),
+      });
+
+      const verifyData = await verifyRes.json();
+if (!verifyRes.ok) {
+    showAlert(verifyData.message || "Passcode verification failed", "error");
+    return;
+}
+
+
       const formData = new FormData();
       formData.append("file", stickerFile);
       formData.append("name", stickerFile.name || "sticker.png");
-      formData.append("passcode", stickerPasscode); // send passcode to API
+      formData.append("passcode", stickerPasscode);
 
       const res = await fetch(`${API_BASE}/stickers`, {
         method: "POST",
@@ -1017,10 +1131,28 @@ const ChatPage = () => {
         data.url && data.url.startsWith("http")
           ? data.url
           : `${API_BASE}${data.url || data.path || ""}`;
-      if (url) setStickers((prev) => [...prev, { id: Date.now(), url }]);
+
+      if (url) {
+        setStickers((prev) => [...prev, { id: Date.now(), url }]);
+
+      if (data.message) {
+    showAlert(data.message, "success");
+} else {
+    showAlert("Sticker အောင်မြင်စွာ upload လုပ်ပြီးပါပြီ ", "success");
+}
+
+      }
     } catch (err) {
       console.error("Sticker upload failed:", err);
+
+ if (err.response?.data?.message) {
+    showAlert(err.response.data.message, "error");
+} else {
+    showAlert("Sticker upload မအောင်မြင်ပါ ", "error");
+}
+
     } finally {
+      // Reset state
       setStickerFile(null);
       setStickerPasscode("");
       setShowStickerPasscodeModal(false);
@@ -1077,7 +1209,7 @@ const ChatPage = () => {
                 className="w-full bg-neutral-800 border border-neutral-700 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 placeholder-neutral-500"
               />
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
               {(shownUsers.length ? shownUsers : users).map((user) => (
                 <div
                   key={user.id}
@@ -1372,6 +1504,12 @@ const ChatPage = () => {
                     onChange={(e) => setStickerPasscode(e.target.value)}
                     placeholder="Passcode"
                     className="w-full px-4 py-2 mb-4 rounded-lg bg-neutral-800 border border-neutral-700 text-neutral-100 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleStickerPasscodeSubmit();
+                      }
+                    }}
+                    autoFocus
                   />
                   <div className="flex justify-between gap-2">
                     <button
@@ -1384,7 +1522,7 @@ const ChatPage = () => {
                       onClick={handleStickerPasscodeSubmit}
                       className="px-4 py-2 bg-yellow-500 rounded-lg hover:bg-yellow-600 text-black transition-colors"
                     >
-                      Submit
+                      Confirm
                     </button>
                   </div>
                 </div>

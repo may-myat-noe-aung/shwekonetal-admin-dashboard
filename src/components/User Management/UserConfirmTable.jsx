@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Eye } from "lucide-react";
 import ConfirmUserDetailModal from "./ConfirmUserDetailModal";
+import { useAlert } from "../../AlertProvider";
 
 export default function UserConfirmTable() {
   const [users, setUsers] = useState([]);
@@ -10,6 +11,8 @@ export default function UserConfirmTable() {
   const [page, setPage] = useState(1);
   const [perPage] = useState(5);
   const [pageWindow, setPageWindow] = useState(1);
+
+  const { showAlert } = useAlert();
 
   // Show only pending users
   const pendingUsers = useMemo(
@@ -39,7 +42,7 @@ export default function UserConfirmTable() {
 
       } catch (err) {
         console.error("Error fetching users:", err);
-        alert("Cannot load user data ❌");
+        showAlert("users အချက်အလက်များကို load ဆွဲလို့မရပါ။ သင့် internet connection ကို စစ်ဆေးပါ", "warning");
       }
     };
 
@@ -62,10 +65,14 @@ export default function UserConfirmTable() {
         )
       );
 
-      alert(`${user.fullname} ${type === "approve" ? "approved ✅" : "rejected ❌"}`);
+      const data = await res.json();
+
+      showAlert(data.message, "success");
     } catch (err) {
       console.error(err);
-      alert("Action failed ❌");
+      const apiMessage =
+      err.response?.data?.message || err.response?.data?.error || "Something went wrong";
+      showAlert(apiMessage, "error");
     }
   };
 

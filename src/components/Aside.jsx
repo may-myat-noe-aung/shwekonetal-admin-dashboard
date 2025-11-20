@@ -11,11 +11,13 @@ import {
   MessageCircleMore,
 } from "lucide-react";
 import { GoReport } from "react-icons/go";
+import { useAlert } from "../AlertProvider";
 
 
 export default function Aside() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate(); // useNavigate hook
+  const { confirm } = useAlert();
 
   const role = localStorage.getItem("adminRole"); // "owner", "manager", "seller"
 
@@ -72,8 +74,8 @@ export default function Aside() {
 
   const filteredNavItems = navItems.filter((item) => item.roles.includes(role));
 
-const handleLogout = () => {
-  const confirmLogout = window.confirm("Are you sure you want to log out?");
+const handleLogout = async() => {
+  const confirmLogout = await confirm("မိတ်ဆွေ Logout လုပ်မှာ သေချာပြီလား?");
   if (!confirmLogout) return;
 
   // Remove only login-related data

@@ -68,7 +68,7 @@ export default function BuyingPricesChart() {
   }, []);
 
   return (
-    <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
+    <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4  overflow-hidden">
       <h3 className="font-semibold mb-3 text-white">
         Buy Price — Today vs Yesterday (Hourly)
       </h3>

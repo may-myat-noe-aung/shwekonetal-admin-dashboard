@@ -13,6 +13,7 @@ import {
 import BuyingPricesChart from "./BuyingPricesChart";
 import SellingPricesChart from "./SellingPricesChart";
 import GoldConversion from "./GoldConversion";
+import { useAlert } from "../../AlertProvider";
 
 export default function GoldManagementPage() {
   const [buyPrice, setBuyPrice] = useState(0);
@@ -21,6 +22,7 @@ export default function GoldManagementPage() {
   const [sellInput, setSellInput] = useState(0);
   const [chartBuyData, setChartBuyData] = useState([]);
   const [chartSellData, setChartSellData] = useState([]);
+  const { showAlert } = useAlert();
 
   const [pePerKyat, setPePerKyat] = useState(16);
   const [ywayPerKyat, setYwayPerKyat] = useState(128);
@@ -152,7 +154,7 @@ export default function GoldManagementPage() {
         fetchLatestSellPrice();
       }
     } catch (err) {
-      alert("❌ Failed to update price: " + err.message);
+      showAlert("Prices Update လုပ်ရန် အခက်အခဲ တစ်ချို့ရှိနေသည်" + err.message, "error");
     } finally {
       setShowModal(false);
     }
@@ -160,7 +162,7 @@ export default function GoldManagementPage() {
 
   const handlePasswordSubmit = async () => {
     if (!password) {
-      alert("Please enter password");
+      showAlert("Passcode ထည့်ပေးပါ", "warning");
       return;
     }
 
@@ -173,11 +175,12 @@ export default function GoldManagementPage() {
       if (response.data.success) {
         startCountdown(modalType);
       } else {
-        alert("❌ Incorrect password");
+        showAlert(verifyResponse?.message || verifyResponse?.error || "Passcode မှားနေပါသည်", "error");
       }
-    } catch (err) {
-      console.error(err);
-      alert("Verification failed!");
+    } catch (error) {
+      const apiMessage =
+        error.response?.data?.message || error.response?.data?.error || "Something went wrong";
+        showAlert(apiMessage, "error");
     }
   };
 
@@ -188,8 +191,8 @@ export default function GoldManagementPage() {
   };
 
   return (
-    <div className="bg-neutral-950 text-neutral-100 space-y-6 ">
-      <div className="mx-auto max-w-7xl px-4 py-6 space-y-6">
+    <div className="bg-neutral-950 text-neutral-100 space-y-6 overflow-x-hidden ">
+      <div className="mx-auto max-w-7xl  px-4 py-6 space-y-6">
         {/* Gold Conversion */}
         <GoldConversion />
 
@@ -197,7 +200,7 @@ export default function GoldManagementPage() {
         <section className="">
           {/* Buy */}
           <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center">
-            <div className="col-span-1 md:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 2xl:py-6 w-full">
+            <div className="col-span-1 md:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 2xl:py-6 w-full overflow-hidden">
               <h3 className="mb-6 font-semibold text-sm md:text-base">
                 Latest Buy Price
               </h3>
@@ -239,7 +242,7 @@ export default function GoldManagementPage() {
             </div>
             <div className="col-span-1 md:col-span-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 overflow-x-auto">
               <h3 className="font-semibold mb-3">Buy Price & Chart</h3>
-              <div className="h-48 w-full min-w-[300px]">
+              <div className="h-48 w-full overflow-x-hidden">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartBuyData}>
                     <defs>
@@ -258,9 +261,9 @@ export default function GoldManagementPage() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                     <XAxis dataKey="time" stroke="#a3a3a3" />
-                    <YAxis stroke="#a3a3a3" width={60} />
+                    <YAxis stroke="#a3a3a3" width={100} />
                     <Tooltip
-                      formatter={(value) => [`${value} ကျပ်`, "Buy Price"]}
+                      formatter={(value) => [`${value} ကျပ်`, " Price"]}
                       contentStyle={{
                         background: "#0a0a0a",
                         border: "1px solid #262626",
@@ -280,7 +283,7 @@ export default function GoldManagementPage() {
 
           {/* Sell */}
           <div className="grid grid-cols-1 md:grid-cols-8 gap-4 items-center mt-6 ">
-            <div className="col-span-1 md:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 2xl:py-6 w-full">
+            <div className="col-span-1 md:col-span-2 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 2xl:py-6 w-full  overflow-hidden">
               <h3 className="mb-6 font-semibold text-sm md:text-base">
                 Latest Sell Price
               </h3>
@@ -325,7 +328,7 @@ export default function GoldManagementPage() {
             </div>
             <div className="col-span-1 md:col-span-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
               <h3 className="font-semibold mb-3">Sell Price & Chart</h3>
-              <div className="h-48 w-full">
+              <div className="h-48 w-full overflow-x-hidden">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartSellData}>
                     <defs>

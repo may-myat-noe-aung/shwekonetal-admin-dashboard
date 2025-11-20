@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { ChevronUp, ChevronDown, Info, Search, Download } from "lucide-react";
 
@@ -16,7 +17,7 @@ export default function SellTable() {
   const [page, setPage] = useState(1);
   const [selectedTxn, setSelectedTxn] = useState(null);
   const [previewImg, setPreviewImg] = useState(null);
- 
+
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
@@ -25,23 +26,27 @@ export default function SellTable() {
 
   const itemsPerPage = 6;
 
-  useEffect(() => {
+useEffect(() => {
+  // fetch every 500ms
+  const interval = setInterval(() => {
     fetchSales();
-  }, []);
+  }, 500);
+
+  // cleanup on unmount
+  return () => clearInterval(interval);
+}, []);
+
 
   const fetchSales = async () => {
     try {
       const res = await fetch(`${API_BASE}/sellTable`);
       const data = await res.json();
       if (data.success) {
-        // Map table data for display (with date object for sorting)
         const mapped = data.data.map((item) => ({
           ...item,
-          date: new Date(item.created_at), // still needed for table sorting/filter
+          date: new Date(item.created_at),
         }));
         setSales(mapped);
-
-        // ✅ Use API totals directly
         setPriceTotal(data.priceTotal);
         setGoldTotal(data.goldTotal);
       }
@@ -76,31 +81,42 @@ export default function SellTable() {
   }, [sales, sortConfig]);
 
   const filteredSales = sortedSales.filter((s) => {
-    // Search filter
-    const matchesSearch = Object.values(s)
-      .join(" ")
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
 
+    const matchesSearch =
+      s.userid?.toLowerCase().includes(term) ||
+      s.fullname?.toLowerCase().includes(term) ||
+      s.seller?.toLowerCase().includes(term) ||
+      s.manager?.toLowerCase().includes(term) ||
+      s.price?.toString().includes(term) ||
+      s.method?.toLowerCase().includes(term) ||
+      s.type?.toLowerCase().includes(term) ||
+      s.gold?.toString().includes(term) ||
+      s.status?.toLowerCase().includes(term) ||
+      (s.agent
+        ? s.agent.toLowerCase().includes(term)
+        : "normal".includes(term)
+      );
+
+    // DATE FILTER (UNCHANGED)
     let matchesDate = false;
-    // date range filter
     const createdAt = new Date(s.created_at);
     const fromTime = fromDate ? new Date(fromDate).setHours(0, 0, 0, 0) : null;
     const toTime = toDate ? new Date(toDate).setHours(23, 59, 59, 999) : null;
+
     if (fromTime && toTime) {
-      // ✅ Range filter
       matchesDate =
         createdAt.getTime() >= fromTime && createdAt.getTime() <= toTime;
     } else if (fromTime || toTime) {
-      // ✅ Only one date → one-day filter
       const singleDate = new Date(fromTime || toTime);
       const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
-      const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
-
+      const endOfDay = new Date(
+        singleDate.setHours(23, 59, 59, 999)
+      ).getTime();
       matchesDate =
-        createdAt.getTime() >= startOfDay && createdAt.getTime() <= endOfDay;
+        createdAt.getTime() >= startOfDay &&
+        createdAt.getTime() <= endOfDay;
     } else {
-      // ✅ No date filters → show all
       matchesDate = true;
     }
 
@@ -113,8 +129,7 @@ export default function SellTable() {
     page * itemsPerPage
   );
 
-  // Export EXCEL
-  const handleExport = async () => {
+   const handleExport = async () => {
     try {
       const res = await fetch("http://38.60.244.74:3000/sellTable");
       const data = await res.json();
@@ -216,7 +231,7 @@ export default function SellTable() {
       console.error("Export error:", error);
     }
   };
-
+  
   return (
     <>
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 overflow-x-auto">
@@ -499,7 +514,7 @@ export default function SellTable() {
                 </p>
                 <p>
                   <span className="text-neutral-400">Agent -</span>{" "}
-                  {selectedTxn.agent || "-"}
+                  {selectedTxn.agent || "Normal"}
                 </p>
               </div>
 

@@ -1,5 +1,6 @@
 import MiniChat from "./MiniChat";
 import React, { useState, useEffect, useRef } from "react";
+import { useAlert } from "../../AlertProvider";
 
 export default function TransactionPopup({
   txn,
@@ -23,6 +24,9 @@ export default function TransactionPopup({
 
   const adminId = localStorage.getItem("adminId");
 
+  const { showAlert } = useAlert();
+
+
   // --- Fetch admin data (same way as Header) ---
   useEffect(() => {
     if (!adminId) return;
@@ -36,72 +40,74 @@ export default function TransactionPopup({
       .catch(() => {});
   }, [adminId]);
 
-  const handleConfirm = async () => {
-    if (!adminData) return alert("❌ Admin data not loaded yet.");
+const handleConfirm = async () => {
+  if (!adminData) return showAlert("Admin data မတွေ့ပါ။", "error");
 
-    try {
-      // verify passcode
-      const verifyRes = await fetch(
-        "http://38.60.244.74:3000/admin/verify-admin-passcode",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ passcode }),
-        }
-      );
-      const verifyData = await verifyRes.json();
-      if (!verifyData.success) {
-        return alert("❌ " + (verifyData.message || "Invalid passcode!"));
-      }
-
-      const type = showPasscode.type;
-      setActionTaken(type);
-
-      const url =
-        type === "approve"
-          ? `http://38.60.244.74:3000/sales/approve/${txn.id}`
-          : `http://38.60.244.74:3000/sales/reject/${txn.id}`;
-
-      let body = {
-        seller: adminData.name,
-        manager: passcode,
-      };
-
-      // Only include fees for delivery + approve
-      if (txn.type === "delivery" && type === "approve") {
-        if (!deliveryFee || !serviceFee) {
-          return alert("❌ Delivery Fee and Service Fee are required!");
-        }
-        body = {
-          ...body,
-          deli_fees: deliveryFee,
-          service_fees: serviceFee,
-        };
-      }
-
-      const res = await fetch(url, {
-        method: "PATCH",
+  try {
+    // verify passcode
+    const verifyRes = await fetch(
+      "http://38.60.244.74:3000/admin/verify-admin-passcode",
+      {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) throw new Error("Request failed");
-
-      updateStatus(txn.id, type === "approve" ? "approved" : "rejected");
-
-      alert(
-        type === "approve"
-          ? " Transaction approved successfully!"
-          : " Transaction rejected successfully!"
-      );
-    } catch {
-      alert("❌ Failed to process transaction");
-    } finally {
-      setShowPasscode(false);
-      setPasscode("");
-      setActionTaken("none");
+        body: JSON.stringify({ passcode }),
+      }
+    );
+    const verifyData = await verifyRes.json();
+    if (!verifyData.success) {
+      return showAlert(verifyData.message || "Passcode မှားနေပါသည်။", "error");
     }
-  };
+
+    const type = showPasscode.type;
+    setActionTaken(type);
+
+    const url =
+      type === "approve"
+        ? `http://38.60.244.74:3000/sales/approve/${txn.id}`
+        : `http://38.60.244.74:3000/sales/reject/${txn.id}`;
+
+    let body = {
+      seller: adminData.name,
+      manager: passcode,
+    };
+
+    // Only include fees for delivery + approve
+    if (txn.type === "delivery" && type === "approve") {
+      if (!deliveryFee || !serviceFee) {
+        return showAlert("Delivery Fee နှင့် Service Fee မပါသေးပါ။", "error");
+      }
+      body = {
+        ...body,
+        deli_fees: deliveryFee,
+        service_fees: serviceFee,
+      };
+    }
+
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    const resData = await res.json();
+
+    if (!res.ok || !resData.success) {
+      return showAlert(resData.message || "လုပ်ဆောင်မှု မအောင်မြင်ပါ", "error");
+    }
+
+    updateStatus(txn.id, type === "approve" ? "approved" : "rejected");
+
+    showAlert(resData.message || "Transaction ပြီးစီးပါပြီ", "success");
+
+  } catch (err) {
+    showAlert("လုပ်ဆောင်မှု မအောင်မြင်ပါ", "error");
+  } finally {
+    setShowPasscode(false);
+    setPasscode("");
+    setActionTaken("none");
+  }
+};
+
 
   const deliveryFeeRef = useRef(null);
 

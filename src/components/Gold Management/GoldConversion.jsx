@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useAlert } from "../../AlertProvider";
 
 const API_BASE = "http://38.60.244.74:3000";
 
@@ -10,7 +11,8 @@ export default function GoldConversion() {
   const [goldList, setGoldList] = useState([]);
   const [lastUpdate, setLastUpdate] = useState({ kyat: 1, yway: 128 });
   const [showTable, setShowTable] = useState(false);
-const [inputFocused, setInputFocused] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
+  const { showAlert } = useAlert();
 
   // Password modal states
   const [showModal, setShowModal] = useState(false);
@@ -73,7 +75,7 @@ const [inputFocused, setInputFocused] = useState(false);
   // Handle Confirm
   const handlePasswordSubmit = async () => {
     if (!password) {
-      alert("Please enter password");
+      showAlert("Passcode ထည့်ပေးပါ", "warning");
       return;
     }
 
@@ -84,11 +86,12 @@ const [inputFocused, setInputFocused] = useState(false);
       );
 
       if (!verifyResponse.data.success) {
-        alert("Incorrect password!");
+        showAlert(verifyResponse?.message || verifyResponse?.error || "Passcode မှားနေပါသည်", "error");
         return;
       }
 
       await axios.post(`${API_BASE}/formula`, { kyat, yway });
+      showAlert("Formula အောင်မြင်စွာ ပြောင်းလဲ ပြီးပါပြီ", "success")
 
       const newRow = {
         kyat,
@@ -107,8 +110,10 @@ const [inputFocused, setInputFocused] = useState(false);
       // resume live fetching
       setAutoFetch(true);
 
-    } catch (err) {
-      alert("Verification failed!");
+    } catch (error) {
+      const apiMessage =
+        error.response?.data?.message || error.response?.data?.error || "Something went wrong";
+        showAlert(apiMessage, "error");
     }
   };
 

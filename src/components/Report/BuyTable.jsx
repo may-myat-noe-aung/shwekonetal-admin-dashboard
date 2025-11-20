@@ -26,53 +26,42 @@ export default function BuyTable() {
   const itemsPerPage = 6;
 
   // ✅ Fetch data from API
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/buyTable`);
-        const data = await res.json();
-        if (data.success) {
-          // Convert created_at to Date object for sorting & display
-          const formatted = data.data.map((item) => ({
-            ...item,
-            date: new Date(item.created_at),
-          }));
-          setBuyData(formatted);
-        }
-      } catch (err) {
-        console.error("Error fetching buyTable:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+useEffect(() => {
+  let intervalId;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/buyTable`);
-        const data = await res.json();
-        if (data.success) {
-          // Table data (for sorting/filtering)
-          const formatted = data.data.map((item) => ({
-            ...item,
-            date: new Date(item.created_at),
-          }));
-          setBuyData(formatted);
+  const fetchData = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/buyTable`);
+      const data = await res.json();
+      if (data.success) {
+        const formatted = data.data.map((item) => ({
+          ...item,
+          date: new Date(item.created_at),
+        }));
+        setBuyData(formatted);
 
-          // Totals from API (no computation)
-          setPriceTotal(data.priceTotal);
-          setGoldTotal(data.goldTotal);
-        }
-      } catch (err) {
-        console.error("Error fetching buyTable:", err);
-      } finally {
-        setLoading(false);
+        // Update totals from API
+        setPriceTotal(data.priceTotal);
+        setGoldTotal(data.goldTotal);
       }
-    };
-    fetchData();
-  }, []);
+    } catch (err) {
+      console.error("Error fetching buyTable:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch
+  fetchData();
+
+  // 500ms interval fetch
+  intervalId = setInterval(fetchData, 500);
+
+  return () => clearInterval(intervalId); // Cleanup on unmount
+}, []);
+
+
+
 
   // ✅ Sorting
   const requestSort = (key) => {
@@ -235,7 +224,7 @@ export default function BuyTable() {
       (item.agent
         ? item.agent.toLowerCase().includes(term)
         : "normal".includes(term)
-      )
+      ) ||
       item.seller?.toLowerCase().includes(term) ||
       item.manager?.toLowerCase().includes(term) ||
       item.price?.toString().toLowerCase().includes(term) ||
@@ -565,7 +554,7 @@ export default function BuyTable() {
                   </p>
                   <p>
                     <span className="text-neutral-400">Agent -</span>{" "}
-                    {selectedTxn.agent || "-"}
+                    {selectedTxn.agent || "Normal"}
                   </p>
                 </div>
               </div>
