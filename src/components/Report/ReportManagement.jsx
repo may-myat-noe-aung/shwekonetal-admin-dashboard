@@ -52,21 +52,26 @@ export default function ReportManagement() {
     fetchGold();
   }, []);
 
-  // 🟡 Step 1: When clicking "Add Gold" → Show passcode modal
   const handleAddGold = () => {
     setPasscodeInput("");
     setPasscodeError("");
     setPasscodeModalOpen(true); // ✅ open modal
   };
 
-  // 🟢 Step 2: When submitting passcode → Verify first, then Add Gold if correct
   const verifyPasscode = async () => {
-    // ✅ Close modal immediately when Confirm is clicked
+    // Check if all values are zero
+
     setPasscodeModalOpen(false);
 
     if (!passcodeInput) {
       showAlert("Passcode ထည့်ပေးပါ", "warning");
+
       return;
+    }
+
+    if (addGold.kyat === 0 && addGold.petha === 0 && addGold.yway === 0) {
+      showAlert("ကျေးဇူးပြုပြီး တန်ဖိုးထည့်ပေးပါ", "warning");
+      return; // stop function
     }
 
     try {

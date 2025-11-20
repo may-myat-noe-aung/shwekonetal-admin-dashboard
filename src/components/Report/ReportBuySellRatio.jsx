@@ -9,9 +9,14 @@ export default function ReportBuySellRatio() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchChartData();
-  }, []);
+useEffect(() => {
+  fetchChartData(); // initial fetch
+
+  const interval = setInterval(fetchChartData, 500); // fetch every 500ms
+
+  return () => clearInterval(interval); // cleanup on unmount
+}, []);
+
 
   const fetchChartData = async () => {
     try {

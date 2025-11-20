@@ -40,11 +40,6 @@ export default function NotificationFetcher() {
 
           let currentCount = 0;
 
-          /*
-          ====================================================
-          SPECIAL FIX FOR NEW USER NOTIFICATION (MAIN BUG FIX)
-          ====================================================
-          */
           if (e.type === "new-user") {
 
             // your API structure:
@@ -69,11 +64,7 @@ export default function NotificationFetcher() {
             return;
           }
 
-          /*
-          ===========================================
-          SALES — special logic (unchanged)
-          ===========================================
-          */
+    
           if (e.type === "sales") {
             const salesData = Array.isArray(data?.data) ? data.data : [];
             currentCount = salesData.length;
@@ -103,11 +94,6 @@ export default function NotificationFetcher() {
             return;
           }
 
-          /*
-          ===========================================
-          DEFAULT HANDLING (ALL OTHER API)
-          ===========================================
-          */
           const dataArr = Array.isArray(data?.data)
             ? data.data
             : Array.isArray(data)
