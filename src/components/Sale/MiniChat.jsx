@@ -79,7 +79,7 @@ export default function MiniChat({ user, onClose }) {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 50); // small delay ensures messages are rendered
-  }, [user])
+  }, [user]);
 
   useEffect(() => {
     if (autoScroll) {
@@ -138,6 +138,18 @@ export default function MiniChat({ user, onClose }) {
     return () => ws.close();
   }, [user]);
 
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto"; // reset
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const maxHeight = 112; // max-h-28
+      const newHeight = Math.min(scrollHeight, maxHeight);
+      textareaRef.current.style.height = newHeight + "px";
+    }
+  }, [newMsg]);
+
+
+
   // ===== send message =====
   const sendMessage = (text, type = "text") => {
     if (!text.trim() || !user?.userid) return;
@@ -150,6 +162,10 @@ export default function MiniChat({ user, onClose }) {
     setMessages((prev) => [...prev, msg]);
     setNewMsg("");
     setShowStickers(false);
+
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "24px"; // exactly 1 line
+    }
 
     try {
       wsRef.current?.send(
@@ -180,12 +196,16 @@ export default function MiniChat({ user, onClose }) {
   }, [messages]);
 
   useEffect(() => {
-    if (textareaRef.current) {
+    if (textareaRef.current && newMsg) { // only adjust if user typed
       textareaRef.current.style.height = "auto";
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const maxHeight = 112; // max-h-28
       textareaRef.current.style.height =
-        textareaRef.current.scrollHeight + "px";
+        Math.min(scrollHeight, maxHeight) + "px";
     }
   }, [newMsg]);
+
+
 
   return (
     <>
@@ -230,17 +250,15 @@ export default function MiniChat({ user, onClose }) {
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`flex flex-col max-w-[80%] break-words ${
-                  msg.from === "admin" ? "ml-auto items-end" : "items-start"
-                }`}
+                className={`flex flex-col max-w-[80%] break-words ${msg.from === "admin" ? "ml-auto items-end" : "items-start"
+                  }`}
               >
                 {msg.type === "text" && (
                   <div
-                    className={`px-3 py-1.5 rounded-xl text-sm max-w-[80%] whitespace-pre-wrap break-words ${
-                      msg.from === "admin"
+                    className={`px-3 py-1.5 rounded-xl text-sm max-w-[80%] whitespace-pre-wrap break-words ${msg.from === "admin"
                         ? "bg-yellow-500 text-white rounded-br-none"
                         : "bg-neutral-700 text-white rounded-bl-none"
-                    }`}
+                      }`}
                   >
                     {msg.text}
                   </div>
@@ -294,14 +312,26 @@ export default function MiniChat({ user, onClose }) {
             placeholder="Type a message..."
             value={newMsg}
             onChange={(e) => setNewMsg(e.target.value)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && !e.shiftKey && sendMessage(newMsg)
-            }
-            className="flex-1 bg-neutral-700 rounded-2xl px-3 py-1.5 text-sm text-white outline-none resize-none max-h-28 overflow-y-auto scrollbar-thin scrollbar-thumb-yellow-500 scrollbar-track-neutral-800 hover:scrollbar-thumb-yellow-400 transition-all duration-200"
+            // onKeyDown={(e) =>
+            //   e.key === "Enter" && !e.shiftKey && sendMessage(newMsg)
+            // }
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();      
+                sendMessage(newMsg);     
+                setNewMsg("");           
+              }
+            }}
+
+            className="flex-1 bg-neutral-700 rounded-2xl px-3 py-1.5 text-sm text-white outline-none resize-none
+           max-h-28 overflow-y-auto
+           scrollbar-thin scrollbar-thumb-yellow-500 scrollbar-track-neutral-800 hover:scrollbar-thumb-yellow-400 transition-all duration-200
+"
             style={{
               scrollbarWidth: "thin",
               scrollbarColor: "#eab308 #262626",
             }}
+            rows={1}
           />
 
           <button

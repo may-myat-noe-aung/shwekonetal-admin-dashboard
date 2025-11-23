@@ -519,6 +519,15 @@ export default function CreateAccount() {
     setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
+  const isValidEmail = (email) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
+  const isValidPhone = (phone) => {
+    return /^\d{7,15}$/.test(phone);
+  };
+
   const handleRegister = async () => {
     const newErrors = {};
     if (!newAccount.name.trim()) newErrors.name = "Name is required";
@@ -531,6 +540,17 @@ export default function CreateAccount() {
     setSuccessMessage("");
 
     if (Object.keys(newErrors).length > 0) return;
+
+    // ---- Email validate here ----
+    if (!isValidEmail(newAccount.email)) {
+      showAlert("Email သည် မှန်ကန်သော format မဟုတ်ပါ", "warning");
+      return;
+    }
+
+    if (!isValidPhone(newAccount.phone)) {
+      showAlert("Phone Number သည် မှန်ကန်သော format မဟုတ်ပါ", "warning");
+      return;
+    }
 
     const strongPasswordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;

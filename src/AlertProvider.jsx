@@ -156,10 +156,10 @@ export function AlertProvider({ children }) {
   };
 
   const alertGradientMap = {
-    success: "bg-gradient-to-r from-green-600/40 to-transparent",
-    error: "bg-gradient-to-r from-red-600/40 to-transparent",
-    warning: "bg-gradient-to-r from-orange-600/40 to-transparent",
-    info: "bg-gradient-to-r from-blue-600/40 to-transparent",
+    success: "bg-gradient-to-r from-green-600/80 to-transparent",
+    error: "bg-gradient-to-r from-red-600/80 to-transparent",
+    warning: "bg-gradient-to-r from-orange-600/80 to-transparent",
+    info: "bg-gradient-to-r from-blue-600/80 to-transparent",
   };
 
   return (

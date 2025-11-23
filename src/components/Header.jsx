@@ -1,17 +1,16 @@
-
-
 import React, { useEffect, useState, useRef } from "react";
-import { Bell, Search } from "lucide-react";
+import { Bell, MessageCircleMore, Search } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import NotificationFetcher from "./NotificationFetcher"; // ✅ import
 import NotificationFetcherForSeller from "./NotificationFetcherForSeller";
+import MessageFetcher from "./MessageFetcher";
 
 const Header = () => {
   const [query, setQuery] = useState("");
   const [adminData, setAdminData] = useState(null);
   const location = useLocation();
   const adminId = localStorage.getItem("adminId");
-  const adminRoll = localStorage.getItem("adminRoll")
+  const adminRole = localStorage.getItem("adminRole");
 
   useEffect(() => {
     if (!adminId) return;
@@ -44,14 +43,14 @@ const Header = () => {
         <h1 className="text-lg font-semibold">{title}</h1>
 
         <div className="ml-auto flex items-center gap-2">
-      
-
           {/* ✅ Notification */}
-          {adminRoll === "seller" ? (
+          {adminRole === "seller" ? (
             <NotificationFetcherForSeller />
           ) : (
             <NotificationFetcher />
           )}
+
+          <MessageFetcher />
 
           {/* Profile */}
           <div className="flex items-center gap-4 ml-4">
@@ -67,8 +66,12 @@ const Header = () => {
               </div>
             )}
             <div>
-              <p className="text-base font-medium">{adminData?.name || "Admin"}</p>
-              <p className="text-sm font-light capitalize">{adminData?.role || "owner"}</p>
+              <p className="text-base font-medium">
+                {adminData?.name || "Admin"}
+              </p>
+              <p className="text-sm font-light capitalize">
+                {adminData?.role || "owner"}
+              </p>
             </div>
           </div>
         </div>

@@ -6,6 +6,8 @@ export default function RevenueTrend() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
+    let intervalId;
+
     async function fetchData() {
       try {
         const res = await fetch("http://38.60.244.74:3000/revenue-gold-chart");
@@ -16,7 +18,12 @@ export default function RevenueTrend() {
       }
     }
 
-    fetchData();
+    // သုံးလိုက်တာ 500ms အကြိမ်ကြိမ် fetch
+    fetchData(); // အရင်တစ်ခါ fetch လုပ်
+    intervalId = setInterval(fetchData, 500);
+
+    // Cleanup – component unmount ရင် interval ဖျက်
+    return () => clearInterval(intervalId);
   }, []);
 
   return (

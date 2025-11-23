@@ -25,7 +25,7 @@ export default function Aside() {
     {
       label: "Dashboard",
       icon: <Home className="h-5 w-5" />,
-      path: "/",
+      path: "/dashboard",
       roles: ["owner"],
     },
     {

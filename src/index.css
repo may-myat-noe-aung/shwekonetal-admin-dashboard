@@ -136,3 +136,49 @@ select::-webkit-scrollbar {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #eab308; /* darker on hover */
 }
+
+/* Scrollbar for chat container */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #eab308 #262626; /* thumb and track */
+}
+
+/* For Webkit browsers */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px; /* scrollbar width */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #262626; /* track color */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #facc15; /* thumb color */
+  border-radius: 10px;
+  transition: background-color 0.2s;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #eab308; /* hover color */
+}
+
+/* Hide scrollbar (Chrome, Safari) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar (Firefox) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* hide scrollbar for a specific container */
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+

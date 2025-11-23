@@ -3,6 +3,7 @@ import Layout from "./components/Layout";
 import NotFoundPage from "./pages/NotFoundPage";
 
 // Dashboard Pages
+import RoleRedirect from "./RoleRedirect";
 import DashboardPage from "./pages/DashboardPage";
 import SalePage from "./pages/SalePage";
 import GoldManagementPage from "./pages/GoldManagementPage";
@@ -30,9 +31,13 @@ const router = createBrowserRouter([
     element: <Layout />,
     errorElement: <NotFoundPage />,
     children: [
-      // Dashboard (owner only)
       {
         index: true,
+        element: <RoleRedirect />
+      },
+
+      {
+        path: "dashboard",
         element: (
           <ProtectedRoute allowedRoles={[ROLES.OWNER]}>
             <DashboardPage />

@@ -30,6 +30,8 @@ export default function ReportManagement() {
 
   // Fetch initial gold from API
   useEffect(() => {
+    let intervalId;
+
     const fetchGold = async () => {
       try {
         const res = await fetch("http://38.60.244.74:3000/open-stock");
@@ -49,7 +51,11 @@ export default function ReportManagement() {
         setLoading(false);
       }
     };
-    fetchGold();
+
+    fetchGold(); // initial fetch
+    intervalId = setInterval(fetchGold, 500); // fetch every 500ms
+
+    return () => clearInterval(intervalId); // cleanup on unmount
   }, []);
 
   const handleAddGold = () => {
@@ -188,7 +194,7 @@ export default function ReportManagement() {
                   return (
                     <div key={k} className="flex flex-col">
                       <label className="text-xs text-neutral-400 mb-2">
-                        {labelMap[i]}alert
+                        {labelMap[i]}
                       </label>
                       <input
                         type="text"
@@ -295,7 +301,7 @@ export default function ReportManagement() {
               type="password"
               value={passcodeInput}
               onChange={(e) => setPasscodeInput(e.target.value)}
-              placeholder="Enter password"
+              placeholder="Enter passcode"
               className="w-full rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm mb-4"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {

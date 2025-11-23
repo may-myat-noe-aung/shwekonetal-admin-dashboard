@@ -1,6 +1,7 @@
 import MiniChat from "./MiniChat";
 import React, { useState, useEffect, useRef } from "react";
 import { useAlert } from "../../AlertProvider";
+import UserDetailModal from "./UserDetailModal";
 
 export default function TransactionPopup({
   txn,
@@ -19,6 +20,9 @@ export default function TransactionPopup({
   const [serviceFee, setServiceFee] = useState(txn.serviceFee || "");
   const [showChat, setShowChat] = useState(false);
   const [adminData, setAdminData] = useState(null);
+  const [localTxn, setLocalTxn] = useState(txn);
+
+  const [showUserDetail, setShowUserDetail] = useState(false);
 
   const isPending = txn.status === "pending";
 
@@ -26,88 +30,129 @@ export default function TransactionPopup({
 
   const { showAlert } = useAlert();
 
-
-  // --- Fetch admin data (same way as Header) ---
   useEffect(() => {
     if (!adminId) return;
-    fetch(`http://38.60.244.74:3000/admin/${adminId}`)
-      .then((res) => res.json())
-      .then((data) => {
+
+    let intervalId;
+
+    const fetchAdmin = async () => {
+      try {
+        const res = await fetch(`http://38.60.244.74:3000/admin/${adminId}`);
+        const data = await res.json();
         if (data.success && data.data.length > 0) {
           setAdminData(data.data[0]);
         }
-      })
-      .catch(() => {});
-  }, [adminId]);
-
-const handleConfirm = async () => {
-  if (!adminData) return showAlert("Admin data မတွေ့ပါ။", "error");
-
-  try {
-    // verify passcode
-    const verifyRes = await fetch(
-      "http://38.60.244.74:3000/admin/verify-admin-passcode",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passcode }),
+      } catch (err) {
+        console.error("Failed to fetch admin data", err);
       }
-    );
-    const verifyData = await verifyRes.json();
-    if (!verifyData.success) {
-      return showAlert(verifyData.message || "Passcode မှားနေပါသည်။", "error");
-    }
-
-    const type = showPasscode.type;
-    setActionTaken(type);
-
-    const url =
-      type === "approve"
-        ? `http://38.60.244.74:3000/sales/approve/${txn.id}`
-        : `http://38.60.244.74:3000/sales/reject/${txn.id}`;
-
-    let body = {
-      seller: adminData.name,
-      manager: passcode,
     };
 
-    // Only include fees for delivery + approve
-    if (txn.type === "delivery" && type === "approve") {
-      if (!deliveryFee || !serviceFee) {
-        return showAlert("Delivery Fee နှင့် Service Fee မပါသေးပါ။", "error");
+    fetchAdmin(); // fetch immediately
+    intervalId = setInterval(fetchAdmin, 500);
+
+    return () => clearInterval(intervalId);
+  }, [adminId]);
+
+  // LIVE TRANSACTION STATUS AUTO REFRESH
+  useEffect(() => {
+    if (!txn?.id) return;
+
+    let intervalId;
+
+    const fetchSingleTxn = async () => {
+      try {
+        const res = await fetch(
+          `http://38.60.244.74:3000/sales-by-id/${txn.id}`
+        );
+        const json = await res.json();
+
+        if (json.success && json.data) {
+          setLocalTxn(json.data); // <-- update localTxn
+          updateStatus(txn.id, json.data.status); // optional, for parent UI
+        }
+      } catch (err) {
+        console.error("Popup Live Fetch Error:", err);
       }
-      body = {
-        ...body,
-        deli_fees: deliveryFee,
-        service_fees: serviceFee,
+    };
+
+    fetchSingleTxn();
+    intervalId = setInterval(fetchSingleTxn, 500);
+
+    return () => clearInterval(intervalId);
+  }, [txn.id]);
+
+  const handleConfirm = async () => {
+    if (!adminData) return showAlert("Admin data မတွေ့ပါ။", "error");
+
+    try {
+      // verify passcode
+      const verifyRes = await fetch(
+        "http://38.60.244.74:3000/admin/verify-admin-passcode",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ passcode }),
+        }
+      );
+      const verifyData = await verifyRes.json();
+      if (!verifyData.success) {
+        return showAlert(
+          verifyData.message || "Passcode မှားနေပါသည်။",
+          "error"
+        );
+      }
+
+      const type = showPasscode.type;
+      setActionTaken(type);
+
+      const url =
+        type === "approve"
+          ? `http://38.60.244.74:3000/sales/approve/${txn.id}`
+          : `http://38.60.244.74:3000/sales/reject/${txn.id}`;
+
+      let body = {
+        seller: adminData.name,
+        manager: passcode,
       };
+
+      // Only include fees for delivery + approve
+      if (txn.type === "delivery" && type === "approve") {
+        if (!deliveryFee || !serviceFee) {
+          return showAlert("Delivery Fee နှင့် Service Fee မပါသေးပါ", "error");
+        }
+        body = {
+          ...body,
+          deli_fees: deliveryFee,
+          service_fees: serviceFee,
+        };
+      }
+
+      const res = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const resData = await res.json();
+
+      if (!res.ok || !resData.success) {
+        return showAlert(
+          resData.message || "လုပ်ဆောင်မှု မအောင်မြင်ပါ",
+          "error"
+        );
+      }
+
+      updateStatus(txn.id, type === "approve" ? "approved" : "rejected");
+
+      showAlert(resData.message || "Transaction ပြီးစီးပါပြီ", "success");
+    } catch (err) {
+      showAlert("လုပ်ဆောင်မှု မအောင်မြင်ပါ", "error");
+    } finally {
+      setShowPasscode(false);
+      setPasscode("");
+      setActionTaken("none");
     }
-
-    const res = await fetch(url, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    const resData = await res.json();
-
-    if (!res.ok || !resData.success) {
-      return showAlert(resData.message || "လုပ်ဆောင်မှု မအောင်မြင်ပါ", "error");
-    }
-
-    updateStatus(txn.id, type === "approve" ? "approved" : "rejected");
-
-    showAlert(resData.message || "Transaction ပြီးစီးပါပြီ", "success");
-
-  } catch (err) {
-    showAlert("လုပ်ဆောင်မှု မအောင်မြင်ပါ", "error");
-  } finally {
-    setShowPasscode(false);
-    setPasscode("");
-    setActionTaken("none");
-  }
-};
-
+  };
 
   const deliveryFeeRef = useRef(null);
 
@@ -189,14 +234,14 @@ const handleConfirm = async () => {
                   <span className="text-neutral-400">Status -</span>{" "}
                   <span
                     className={`font-semibold px-2 py-1 rounded-full ${
-                      txn.status === "approved"
+                      localTxn.status === "approved"
                         ? "text-emerald-400 bg-emerald-900/20"
-                        : txn.status === "pending"
+                        : localTxn.status === "pending"
                         ? "text-yellow-400 bg-yellow-900/20"
                         : "text-rose-400 bg-rose-900/20"
                     }`}
                   >
-                    {txn.status || "-"}
+                    {localTxn.status || "-"}
                   </span>
                 </p>
                 <p>
@@ -221,6 +266,13 @@ const handleConfirm = async () => {
                 </p>
 
                 <p>
+                  <span className="text-neutral-400">Type -</span>{" "}
+                  <span className="font-semibold px-2 py-1 rounded-full text-red-400 bg-red-900/20">
+                    {txn.type || "-"}
+                  </span>
+                </p>
+
+                <p>
                   <span className="text-neutral-400">ကျပ် ပဲ ရွေး -</span>{" "}
                   {txn.gold}
                 </p>
@@ -239,9 +291,17 @@ const handleConfirm = async () => {
                 </p>
 
                 <p>
-                  <span className="text-neutral-400">Type -</span>{" "}
-                  <span className="font-semibold px-2 py-1 rounded-full text-red-400 bg-red-900/20">
-                    {txn.type || "-"}
+                  <span className="text-neutral-400">Status -</span>{" "}
+                  <span
+                    className={`font-semibold px-2 py-1 rounded-full ${
+                      localTxn.status === "approved"
+                        ? "text-emerald-400 bg-emerald-900/20"
+                        : localTxn.status === "pending"
+                        ? "text-yellow-400 bg-yellow-900/20"
+                        : "text-rose-400 bg-rose-900/20"
+                    }`}
+                  >
+                    {localTxn.status || "-"}
                   </span>
                 </p>
 
@@ -270,7 +330,7 @@ const handleConfirm = async () => {
                     </p>
                     <p>
                       <span className="text-neutral-400 text-md">Amount -</span>{" "}
-                      {txn.price?.toLocaleString()} Ks
+                      {txn.price?.toLocaleString()} ကျပ်
                     </p>
                   </div>
                 </div>
@@ -291,6 +351,19 @@ const handleConfirm = async () => {
                         <span className="text-neutral-400">Full Name -</span>{" "}
                         {txn.fullname || "-"}
                       </p>
+
+                      <p>
+                        <span className="text-neutral-400">Type -</span>{" "}
+                        <span
+                          className={`font-semibold px-2 py-1 rounded-full ${
+                            txn.type === "delivery"
+                              ? "text-purple-400 bg-purple-900/20"
+                              : "text-neutral-300 bg-neutral-800/20"
+                          }`}
+                        >
+                          {txn.type || "-"}
+                        </span>
+                      </p>
                       <p>
                         <span className="text-neutral-400">Phone -</span>{" "}
                         {txn.payment_phone || "-"}
@@ -309,18 +382,18 @@ const handleConfirm = async () => {
                           ? new Date(txn.date).toLocaleTimeString()
                           : "-"}
                       </p>
-                      <p className="mt-2">
+                      <p className="">
                         <span className="text-neutral-400">Status -</span>{" "}
                         <span
                           className={`font-semibold px-2 py-1 rounded-full ${
-                            txn.status === "approved"
+                            localTxn.status === "approved"
                               ? "text-emerald-400 bg-emerald-900/20"
-                              : txn.status === "pending"
+                              : localTxn.status === "pending"
                               ? "text-yellow-400 bg-yellow-900/20"
                               : "text-rose-400 bg-rose-900/20"
                           }`}
                         >
-                          {txn.status || "-"}
+                          {localTxn.status || "-"}
                         </span>
                       </p>
                       <p>
@@ -354,12 +427,14 @@ const handleConfirm = async () => {
 
                       <p>
                         <span className="text-neutral-400">Delivery Fee -</span>{" "}
-                        {txn.deli_fees?.toLocaleString() || deliveryFee || "-"}{" "}
+                        {localTxn.deli_fees?.toLocaleString() ||
+                          deliveryFee ||
+                          "-"}{" "}
                         ကျပ်
                       </p>
                       <p>
                         <span className="text-neutral-400">Service Fee -</span>{" "}
-                        {txn.service_fees?.toLocaleString() ||
+                        {localTxn.service_fees?.toLocaleString() ||
                           serviceFee ||
                           "-"}{" "}
                         ကျပ်
@@ -370,77 +445,93 @@ const handleConfirm = async () => {
               </div>
 
               <div>
-                {txn.status === "pending" && txn.type === "delivery" && (
-                  <div>
-                    <div className="flex gap-4 mb-8">
-                      <div>
-                        <label className="text-sm text-neutral-400">
-                          Delivery Fee
-                        </label>
-                        <input
-                          ref={deliveryFeeRef}
-                          type="number"
-                          value={deliveryFee}
-                          onChange={(e) =>
-                            setDeliveryFee(Number(e.target.value))
-                          }
-                          required
-                          className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
-                        />
+                {localTxn.status === "pending" &&
+                  localTxn.type === "delivery" && (
+                    <div>
+                      <div className="flex gap-4 mb-8">
+                        <div>
+                          <label className="text-sm text-neutral-400">
+                            Delivery Fee
+                          </label>
+                          <input
+                            ref={deliveryFeeRef}
+                            type="number"
+                            value={deliveryFee}
+                            onChange={(e) =>
+                              setDeliveryFee(Number(e.target.value))
+                            }
+                            required
+                            className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm text-neutral-400">
+                            Service Fee
+                          </label>
+                          <input
+                            type="number"
+                            value={serviceFee}
+                            onChange={(e) =>
+                              setServiceFee(Number(e.target.value))
+                            }
+                            required
+                            className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-sm text-neutral-400">
-                          Service Fee
-                        </label>
-                        <input
-                          type="number"
-                          value={serviceFee}
-                          onChange={(e) =>
-                            setServiceFee(Number(e.target.value))
-                          }
-                          required
-                          className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-2 py-1 text-sm"
-                        />
+
+                      {/* --- Transfer / Reject / Message Buttons --- */}
+                      <div className="flex justify-between gap-3">
+
+               <div className="flex items-center justify-center gap-4">
+                              <button
+                    type="button"
+                    onClick={() => setShowUserDetail(true)}
+                    className="px-3 py-1.5 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-sm text-white"
+                  >
+                    User Details
+                  </button>
+
+                           <button
+                          type="button"
+                          onClick={() => setShowChat(true)}
+                          className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-sm"
+                        >
+                          Message
+                        </button>
+               </div>
+
+                 <div className=" flex items-center justify-center gap-4">
+                         <button
+                          type="button" // not submit
+                          onClick={() => setShowPasscode({ type: "approve" })}
+                          className={`px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-sm ${
+                            actionTaken !== "none"
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          }`}
+                          disabled={actionTaken !== "none"}
+                        >
+                          Transfer
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPasscode({ type: "reject" })}
+                          className={`px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-sm ${
+                            actionTaken !== "none"
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          }`}
+                        >
+                          Reject
+                        </button>
+                 </div>
+
+                     
                       </div>
                     </div>
-
-                    {/* --- Transfer / Reject / Message Buttons --- */}
-                    <div className="flex justify-end gap-3">
-                      <button
-                        type="button" // not submit
-                        onClick={() => setShowPasscode({ type: "approve" })}
-                        className={`px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-sm ${
-                          actionTaken !== "none"
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                        disabled={actionTaken !== "none"}
-                      >
-                        Transfer
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowPasscode({ type: "reject" })}
-                        className={`px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-sm ${
-                          actionTaken !== "none"
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                      >
-                        Reject
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowChat(true)}
-                        className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-sm"
-                      >
-                        💬 Message
-                      </button>
-                    </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           )}
@@ -465,51 +556,65 @@ const handleConfirm = async () => {
           )}
 
           {/* --- Buttons --- */}
-          <div className="flex justify-end gap-3">
-            {!(txn.type === "delivery" && txn.status === "pending") && (
-              <>
-                {txn.status !== "approved" &&
-                  txn.status !== "rejected" &&
-                  txn.type !== "delivery" && (
-                    <>
-                      <button
-                        type="button" // add this
-                        onClick={() => setShowPasscode({ type: "approve" })}
-                        className={`px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-sm ${
-                          actionTaken !== "none"
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                      >
-                        Transfer
-                      </button>
-
-                      <button
-                        type="button" // add this
-                        onClick={() => setShowPasscode({ type: "reject" })}
-                        className={`px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-sm ${
-                          actionTaken !== "none"
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                      >
-                        Reject
-                      </button>
-                    </>
-                  )}
-              </>
-            )}
-
+          <div className="flex justify-between items-center">
             {/* Message button always visible */}
-            <div className="flex justify-end gap-3">
-              {!(txn.type === "delivery" && txn.status === "pending") && (
-                <button
-                  type="button" // add this
-                  onClick={() => setShowChat(true)}
-                  className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-sm"
-                >
-                  💬 Message
-                </button>
+            <div className="">
+              {!(
+                localTxn.type === "delivery" && localTxn.status === "pending"
+              ) && (
+                <div className="flex justify-center items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowUserDetail(true)}
+                    className="px-3 py-1.5 rounded-lg bg-yellow-600 hover:bg-yellow-700 text-sm text-white"
+                  >
+                    User Details
+                  </button>
+                  <button
+                    type="button" // add this
+                    onClick={() => setShowChat(true)}
+                    className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-sm"
+                  >
+                    Message
+                  </button>{" "}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-4">
+              {!(
+                localTxn.type === "delivery" && localTxn.status === "pending"
+              ) && (
+                <>
+                  {localTxn.status !== "approved" &&
+                    localTxn.status !== "rejected" &&
+                    localTxn.type !== "delivery" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setShowPasscode({ type: "approve" })}
+                          className={`px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-sm ${
+                            actionTaken !== "none"
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          }`}
+                        >
+                          Transfer
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPasscode({ type: "reject" })}
+                          className={`px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-sm ${
+                            actionTaken !== "none"
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          }`}
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                </>
               )}
             </div>
           </div>
@@ -586,6 +691,13 @@ const handleConfirm = async () => {
             />
           </div>
         </div>
+      )}
+      {/* show user detail */}
+      {showUserDetail && (
+        <UserDetailModal
+          viewUser={localTxn.userid}
+          onClose={() => setShowUserDetail(false)}
+        />
       )}
     </>
   );

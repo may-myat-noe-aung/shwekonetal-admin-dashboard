@@ -113,7 +113,7 @@ useEffect(() => {
             <span className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
             <div>
               {p.name}: <strong>{p.percent}%</strong>
-              <div className="text-neutral-400 text-xs">{p.value.toLocaleString()} Ks</div>
+              <div className="text-neutral-400 text-xs">{p.value.toLocaleString()} ရွေး</div>
             </div>
           </div>
         ))}

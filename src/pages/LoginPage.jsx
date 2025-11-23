@@ -238,7 +238,7 @@ export default function SignIn() {
         localStorage.setItem("adminRole", data.role);
         localStorage.setItem("adminId", data.id);
         showAlert(data.message || "Login successful!", "success");
-        if (data.role === "owner") navigate("/");
+        if (data.role === "owner") navigate("/dashboard");
         else if (data.role === "manager") navigate("/sale");
         else if (data.role === "seller") navigate("/sale");
       } else {

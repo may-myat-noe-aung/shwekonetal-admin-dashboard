@@ -23,6 +23,10 @@ export default function BuyTable() {
   const [priceTotal, setPriceTotal] = useState(0);
   const [goldTotal, setGoldTotal] = useState("");
 
+  const [pageWindow, setPageWindow] = useState(1);
+const pagesPerWindow = 5;
+
+
   const itemsPerPage = 6;
 
   // ✅ Fetch data from API
@@ -421,51 +425,82 @@ useEffect(() => {
         </tbody>
       </table>
 
-      {/* Pagination */}
-      <div className="flex justify-between px-4 pt-4 text-sm text-neutral-400">
-        <p>
-          Page {totalPages === 0 ? 0 : page} of {totalPages}
-        </p>
-        <div className="flex gap-2">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className={`px-3 py-1 rounded-md border border-neutral-700 ${
-              page === 1
-                ? "text-neutral-500 cursor-not-allowed"
-                : "text-yellow-400 hover:bg-neutral-900"
-            }`}
-          >
-            Prev
-          </button>
+    {/* Pagination */}
+<div className="flex justify-between px-4 pt-4 text-sm text-neutral-400">
+  <p>
+    Page {totalPages === 0 ? 0 : page} of {totalPages}
+  </p>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-            <button
-              key={n}
-              onClick={() => setPage(n)}
-              className={`px-3 py-1 rounded-md border border-neutral-700 ${
-                page === n
-                  ? "bg-yellow-500 text-black font-semibold"
-                  : "text-yellow-400 hover:bg-neutral-900"
-              }`}
-            >
-              {n}
-            </button>
-          ))}
+  <div className="flex gap-2">
 
-          <button
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            className={`px-3 py-1 rounded-md border border-neutral-700 ${
-              page === totalPages
-                ? "text-neutral-500 cursor-not-allowed"
-                : "text-yellow-400 hover:bg-neutral-900"
-            }`}
-          >
-            Next
-          </button>
-        </div>
-      </div>
+    {/* Prev Page */}
+    <button
+      disabled={page === 1}
+      onClick={() => {
+        const newPage = Math.max(1, page - 1);
+        setPage(newPage);
+
+        if (newPage < (pageWindow - 1) * pagesPerWindow + 1) {
+          setPageWindow(pageWindow - 1);
+        }
+      }}
+      className={`px-3 py-1 rounded-md border border-neutral-700 ${
+        page === 1
+          ? "text-neutral-500 cursor-not-allowed"
+          : "text-yellow-400 hover:bg-neutral-900"
+      }`}
+    >
+      Prev
+    </button>
+
+    {/* --- Pagination sliding window --- */}
+    {(() => {
+      const startPage = (pageWindow - 1) * pagesPerWindow + 1;
+      const endPage = Math.min(startPage + pagesPerWindow - 1, totalPages);
+      const visiblePages = [];
+
+      for (let i = startPage; i <= endPage; i++) {
+        visiblePages.push(i);
+      }
+
+      return visiblePages.map((n) => (
+        <button
+          key={n}
+          onClick={() => setPage(n)}
+          className={`px-3 py-1 rounded-md border border-neutral-700 ${
+            page === n
+              ? "bg-yellow-500 text-black font-semibold"
+              : "text-yellow-400 hover:bg-neutral-900"
+          }`}
+        >
+          {n}
+        </button>
+      ));
+    })()}
+
+    {/* Next Page */}
+    <button
+      disabled={page === totalPages}
+      onClick={() => {
+        const newPage = Math.min(totalPages, page + 1);
+        setPage(newPage);
+
+        if (newPage > pageWindow * pagesPerWindow) {
+          setPageWindow(pageWindow + 1);
+        }
+      }}
+      className={`px-3 py-1 rounded-md border border-neutral-700 ${
+        page === totalPages
+          ? "text-neutral-500 cursor-not-allowed"
+          : "text-yellow-400 hover:bg-neutral-900"
+      }`}
+    >
+      Next
+    </button>
+
+  </div>
+</div>
+
 
       {/* --- BUY TRANSACTION DETAILS --- */}
       {selectedTxn && (
@@ -506,7 +541,7 @@ useEffect(() => {
                   </p>
                   <p>
                     <span className="text-neutral-400">Amount -</span>{" "}
-                    {selectedTxn.price?.toLocaleString() || "-"} Ks
+                    {selectedTxn.price?.toLocaleString() || "-"} ကျပ်
                   </p>
                   <p>
                     <span className="text-neutral-400">Payment Method -</span>{" "}

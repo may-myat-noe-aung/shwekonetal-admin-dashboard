@@ -273,7 +273,7 @@ useEffect(() => {
       }
     } catch (error) {
       console.error("Failed to fetch server status:", error);
-      showAlert(error.response?.data?.message || "Server status ဖတ်ရန်မအောင်မြင်ပါ ❌", "error");
+      showAlert(error.response?.data?.message || "Server status ဖတ်ရန်မအောင်မြင်ပါ", "error");
     } finally {
       setLoading(false);
     }

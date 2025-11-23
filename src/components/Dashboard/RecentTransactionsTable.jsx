@@ -110,7 +110,7 @@ export default function RecentTransactions() {
             Manager: item.manager || "-",
             Type: item.type,
             Gold: item.gold,
-            Price: `${item.price.toLocaleString()} ကျပ်`,
+            Price: `${item.type === "delivery" ? '-' : item.price.toLocaleString()} ကျပ်`,
             Date: new Date(item.created_at).toLocaleString(),
             Time: new Date(item.created_at).toLocaleTimeString([], {
               hour: "2-digit",

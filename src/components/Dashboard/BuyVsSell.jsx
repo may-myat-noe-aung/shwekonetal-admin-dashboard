@@ -16,10 +16,8 @@ export default function BuyVsSell() {
       }
     };
 
-    // ပထမဆုံး fetch တစ်ခါ
     fetchData();
 
-    // 500ms အကြိမ် fetch
     const intervalId = setInterval(fetchData, 500);
 
     // Cleanup on unmount
@@ -30,7 +28,7 @@ export default function BuyVsSell() {
     <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold">Buy vs Sell</h3>
-        <PieChartIcon className="h-4 w-4 text-neutral-400" />
+        <PieChartIcon className="h-4 w-4 text-neutral-400 overflow-hidden" />
       </div>
       <div className="h-56">
         <ResponsiveContainer width="100%" height="100%">
@@ -49,8 +47,12 @@ export default function BuyVsSell() {
             <Tooltip
               contentStyle={{
                 background: "#f59e0b",
-                border: "1px solid #f59e0b" ,
+                border: "1px solid #f59e0b",
               }}
+              formatter={(value, name) => [
+                `${value?.toLocaleString()} ရွေး`,
+                "Price",
+              ]}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -63,7 +65,7 @@ export default function BuyVsSell() {
                 i === 0 ? "bg-emerald-500" : "bg-rose-500"
               }`}
             />{" "}
-            {item.label}: {item.value}
+            {item.label}: {item.value} ရွေး
           </div>
         ))}
       </div>

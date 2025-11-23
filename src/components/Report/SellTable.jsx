@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { ChevronUp, ChevronDown, Info, Search, Download } from "lucide-react";
 
@@ -26,16 +25,15 @@ export default function SellTable() {
 
   const itemsPerPage = 6;
 
-useEffect(() => {
-  // fetch every 500ms
-  const interval = setInterval(() => {
-    fetchSales();
-  }, 500);
+  useEffect(() => {
+    // fetch every 500ms
+    const interval = setInterval(() => {
+      fetchSales();
+    }, 500);
 
-  // cleanup on unmount
-  return () => clearInterval(interval);
-}, []);
-
+    // cleanup on unmount
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchSales = async () => {
     try {
@@ -95,8 +93,7 @@ useEffect(() => {
       s.status?.toLowerCase().includes(term) ||
       (s.agent
         ? s.agent.toLowerCase().includes(term)
-        : "normal".includes(term)
-      );
+        : "normal".includes(term));
 
     // DATE FILTER (UNCHANGED)
     let matchesDate = false;
@@ -110,12 +107,9 @@ useEffect(() => {
     } else if (fromTime || toTime) {
       const singleDate = new Date(fromTime || toTime);
       const startOfDay = new Date(singleDate.setHours(0, 0, 0, 0)).getTime();
-      const endOfDay = new Date(
-        singleDate.setHours(23, 59, 59, 999)
-      ).getTime();
+      const endOfDay = new Date(singleDate.setHours(23, 59, 59, 999)).getTime();
       matchesDate =
-        createdAt.getTime() >= startOfDay &&
-        createdAt.getTime() <= endOfDay;
+        createdAt.getTime() >= startOfDay && createdAt.getTime() <= endOfDay;
     } else {
       matchesDate = true;
     }
@@ -129,7 +123,7 @@ useEffect(() => {
     page * itemsPerPage
   );
 
-   const handleExport = async () => {
+  const handleExport = async () => {
     try {
       const res = await fetch("http://38.60.244.74:3000/sellTable");
       const data = await res.json();
@@ -144,8 +138,9 @@ useEffect(() => {
         .filter((s) => ["sell"].includes(s.type?.toLowerCase()))
         .filter((s) => {
           // search (fullname, id_number, email)
-          const text =
-            `${s.fullname} ${s.userid} ${s.agent ? s.agent : 'Normal'} ${s.price} ${s.status} ${s.method}`.toLowerCase();
+          const text = `${s.fullname} ${s.userid} ${
+            s.agent ? s.agent : "Normal"
+          } ${s.price} ${s.status} ${s.method}`.toLowerCase();
           const matchesSearch = searchTerm
             ? text.includes(searchTerm.toLowerCase())
             : true;
@@ -231,7 +226,7 @@ useEffect(() => {
       console.error("Export error:", error);
     }
   };
-  
+
   return (
     <>
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4 overflow-x-auto">
@@ -360,7 +355,7 @@ useEffect(() => {
                     {s.price.toLocaleString()} Ks
                   </td>
                   <td className="py-2 px-3 text-center">
-       {new Intl.DateTimeFormat("en-GB", {
+                    {new Intl.DateTimeFormat("en-GB", {
                       day: "2-digit",
                       month: "2-digit",
                       year: "numeric",
@@ -399,19 +394,36 @@ useEffect(() => {
             >
               Prev
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                onClick={() => setPage(n)}
-                className={`px-3 py-1 rounded-md border border-neutral-700 ${
-                  page === n
-                    ? "bg-yellow-500 text-black font-semibold"
-                    : "text-yellow-400 hover:bg-neutral-900"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
+
+            {/* --- Sliding Pagination Window --- */}
+            {(() => {
+              const pagesPerWindow = 5; 
+              const windowIndex = Math.floor((page - 1) / pagesPerWindow);
+
+              const startPage = windowIndex * pagesPerWindow + 1;
+              const endPage = Math.min(
+                startPage + pagesPerWindow - 1,
+                totalPages
+              );
+
+              const visiblePages = [];
+              for (let i = startPage; i <= endPage; i++) visiblePages.push(i);
+
+              return visiblePages.map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setPage(n)}
+                  className={`px-3 py-1 rounded-md border border-neutral-700 ${
+                    page === n
+                      ? "bg-yellow-500 text-black font-semibold"
+                      : "text-yellow-400 hover:bg-neutral-900"
+                  }`}
+                >
+                  {n}
+                </button>
+              ));
+            })()}
+
             <button
               disabled={page === totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}

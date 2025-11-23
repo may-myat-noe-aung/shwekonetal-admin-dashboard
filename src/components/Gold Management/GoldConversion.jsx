@@ -222,7 +222,7 @@ export default function GoldConversion() {
             </button>
 
             <h3 className="text-lg font-semibold mb-4 text-center">
-              Enter Passcode to Update
+              Enter Passcode to Confirm
             </h3>
 
             <input

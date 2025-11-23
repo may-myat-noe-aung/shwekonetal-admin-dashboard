@@ -21,11 +21,10 @@ export default function NotificationFetcherForSeller() {
       try {
         const endpoints = [
           { url: "http://38.60.244.74:3000/sales", type: "sales" },
-
-          // ✅ Newly added notification sources
           { url: "http://38.60.244.74:3000/buyTable", type: "buy-table", message: "New buy record has been approved!" },
           { url: "http://38.60.244.74:3000/sellTable", type: "sell-table", message: "New sell record has been approved!" },
           { url: "http://38.60.244.74:3000/deliTable", type: "delivery-table", message: "New delivery record has been approved!" },
+          { url: "http://38.60.244.74:3000/reject", type: "reject" }
         ];
 
         const responses = await Promise.all(endpoints.map((e) => fetch(e.url).then((r) => r.json())));
@@ -38,7 +37,7 @@ export default function NotificationFetcherForSeller() {
 
           let currentCount = 0;
 
-          // Handle /sales separately
+          // Sales endpoint
           if (e.type === "sales") {
             const salesData = Array.isArray(data?.data) ? data.data : [];
             currentCount = salesData.length;
@@ -63,19 +62,57 @@ export default function NotificationFetcherForSeller() {
                 });
               }
             }
-          } else {
-            // ✅ For other APIs, including new ones
-            const dataArr = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-            currentCount = dataArr.length;
 
-            if (currentCount > prevCount) {
-              newNotis.push({
-                type: e.type,
-                message: e.message,
-                time: new Date().toLocaleTimeString(),
-                read: false,
-              });
+            localStorage.setItem(key, currentCount.toString());
+            return;
+          }
+
+          // Reject endpoint
+          if (e.type === "reject") {
+            const rejectData = Array.isArray(data?.data) ? data.data : [];
+            currentCount = rejectData.length;
+
+            if (currentCount > prevCount && rejectData.length > 0) {
+              const newRow = rejectData[0];
+              const rowType = newRow?.type?.toLowerCase?.();
+              if (!rowType) return;
+
+              const messageMap = {
+                buy: "New buy record has been rejected!",
+                sell: "New sell record has been rejected!",
+                delivery: "New delivery record has been rejected!",
+              };
+
+              if (messageMap[rowType]) {
+                newNotis.push({
+                  type: `reject-${rowType}`,
+                  message: messageMap[rowType],
+                  time: new Date().toLocaleTimeString(),
+                  read: false,
+                });
+              }
             }
+
+            localStorage.setItem(key, currentCount.toString());
+            return;
+          }
+
+          // Other table endpoints
+          const dataArr = Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data)
+            ? data
+            : [];
+
+          currentCount = dataArr.length;
+
+          if (currentCount > prevCount && e.message) {
+            newNotis.push({
+              type: e.type,
+              message: e.message,
+              time: new Date().toLocaleTimeString(),
+              read: false,
+            });
           }
 
           localStorage.setItem(key, currentCount.toString());
@@ -93,7 +130,7 @@ export default function NotificationFetcherForSeller() {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 1000);
+    const interval = setInterval(fetchData, 500); // fetch every 500ms
     return () => clearInterval(interval);
   }, []);
 

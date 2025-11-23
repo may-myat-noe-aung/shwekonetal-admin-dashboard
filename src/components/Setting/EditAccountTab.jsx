@@ -102,10 +102,19 @@ export default function EditAccountTab() {
     setPassword("");
   };
 
+  const isValidPhone = (phone) => {
+    return /^\d{7,15}$/.test(phone); // only digits, length 7-15
+  };
+
   // Submit passcode & update
 const handlePasswordSubmit = async () => {
   if (!password) {
     showAlert("Passcode ထည့်ပေးပါ", "warning");
+    return;
+  }
+
+  if (!isValidPhone(account.phone)) {
+    showAlert("Phone Number သည် မှန်ကန်သော format မဟုတ်ပါ", "warning");
     return;
   }
 

@@ -435,7 +435,10 @@ export default function ManagerSellerList() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "id",
+    direction: "desc",
+  });
 
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 6;
@@ -447,7 +450,6 @@ export default function ManagerSellerList() {
 
   useEffect(() => {
     const fetchAccounts = async () => {
-      setLoading(true);
       try {
         const res = await fetch("http://38.60.244.74:3000/admin");
         const data = await res.json();
@@ -457,18 +459,25 @@ export default function ManagerSellerList() {
         }
       } catch (err) {
         console.error(err);
-        showAlert("Server ချိတ်ဆက်မှု မအောင်မြင်ပါ ", "error"); // Burmese fallback
-      } finally {
-        setLoading(false);
+        showAlert("Server ချိတ်ဆက်မှု မအောင်မြင်ပါ ", "error");
       }
     };
+
+    // first time call
     fetchAccounts();
+
+    // run every 500ms
+    const intervalId = setInterval(fetchAccounts, 500);
+
+    // cleanup when component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   const filteredAccounts = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return accounts.filter((a) => {
       const matchesText =
+        a.id.toLowerCase().includes(term) ||
         a.name.toLowerCase().includes(term) ||
         a.email.toLowerCase().includes(term) ||
         a.role.toLowerCase().includes(term) ||
@@ -511,6 +520,7 @@ export default function ManagerSellerList() {
     const exportData = sortedAccounts.filter((a) => {
       const genderMatch = !term || (a.gender && a.gender.toLowerCase() === term);
       const textMatch =
+        a.id.toLowerCase().includes(term) ||
         a.name.toLowerCase().includes(term) ||
         a.email.toLowerCase().includes(term) ||
         a.role.toLowerCase().includes(term) ||
@@ -520,6 +530,7 @@ export default function ManagerSellerList() {
 
     const exportList = exportData.map((a, index) => ({
       No: index + 1,
+      Id: a.id,
       Name: a.name,
       Email: a.email,
       Role: a.role,
@@ -634,6 +645,7 @@ export default function ManagerSellerList() {
           <thead>
             <tr className="border-b border-neutral-800 text-neutral-500 text-center">
               {[
+                { label: "ID", key: "id" },
                 { label: "Photo", key: "photo" },
                 { label: "Name", key: "name" },
                 { label: "Email", key: "email" },
@@ -664,10 +676,11 @@ export default function ManagerSellerList() {
               ))}
             </tr>
           </thead>
+
           <tbody>
             {paginatedAccounts.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-10 text-neutral-500">
+                <td colSpan={8} className="text-center py-10 text-neutral-500">
                   No accounts found.
                 </td>
               </tr>
@@ -677,6 +690,10 @@ export default function ManagerSellerList() {
                   key={a.id}
                   className="border-b border-neutral-800 hover:bg-neutral-800/50 text-center"
                 >
+                  {/* ⭐ ID Column */}
+                  <td className="py-2 px-3">{a.id}</td>
+
+                  {/* Photo */}
                   <td className="py-2 px-3">
                     {a.photo ? (
                       <img
@@ -697,17 +714,18 @@ export default function ManagerSellerList() {
                       </div>
                     )}
                   </td>
+
                   <td className="py-2 px-3">{a.name}</td>
                   <td className="py-2 px-3">{a.email}</td>
                   <td className="py-2 px-3">{a.role}</td>
                   <td className="py-2 px-3">{a.phone || "-"}</td>
                   <td className="py-2 px-3">{a.gender || "-"}</td>
+
                   <td className="py-2 px-3">
                     <button
                       onClick={() => handleDeleteClick(a)}
                       className="text-red-400 hover:text-red-600 mx-auto"
                     >
-                      {/* Trash Icon */}
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5 mx-auto"

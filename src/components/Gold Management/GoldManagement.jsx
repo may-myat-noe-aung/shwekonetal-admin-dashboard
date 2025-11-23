@@ -37,6 +37,7 @@ export default function GoldManagementPage() {
   const [password, setPassword] = useState("");
   const [countdown, setCountdown] = useState(10);
   const [timer, setTimer] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [inputFocused, setInputFocused] = useState(false); // ✅ new state to pause fetch
 
@@ -130,15 +131,21 @@ export default function GoldManagementPage() {
   };
 
   const startCountdown = (type) => {
+    if (timer) return; // prevent double timer
+
     let timeLeft = 10;
+
     const interval = setInterval(() => {
       timeLeft -= 1;
       setCountdown(timeLeft);
+
       if (timeLeft <= 0) {
         clearInterval(interval);
+        setTimer(null);
         applyUpdate(type);
       }
     }, 1000);
+
     setTimer(interval);
   };
 
@@ -154,15 +161,22 @@ export default function GoldManagementPage() {
         fetchLatestSellPrice();
       }
     } catch (err) {
-      showAlert("Prices Update လုပ်ရန် အခက်အခဲ တစ်ချို့ရှိနေသည်" + err.message, "error");
+      showAlert(
+        "Prices Update လုပ်ရန် အခက်အခဲ တစ်ချို့ရှိနေသည်" + err.message,
+        "error"
+      );
     } finally {
       setShowModal(false);
     }
   };
 
   const handlePasswordSubmit = async () => {
+    if (isSubmitting) return; // 🔥 stop double click
+    setIsSubmitting(true);
+
     if (!password) {
       showAlert("Passcode ထည့်ပေးပါ", "warning");
+      setIsSubmitting(false);
       return;
     }
 
@@ -175,19 +189,30 @@ export default function GoldManagementPage() {
       if (response.data.success) {
         startCountdown(modalType);
       } else {
-        showAlert(verifyResponse?.message || verifyResponse?.error || "Passcode မှားနေပါသည်", "error");
+        showAlert(
+          response.data?.message ||
+            response.data?.error ||
+            "Passcode မှားနေပါသည်",
+          "error"
+        );
+        setIsSubmitting(false);
       }
     } catch (error) {
       const apiMessage =
-        error.response?.data?.message || error.response?.data?.error || "Something went wrong";
-        showAlert(apiMessage, "error");
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Something went wrong";
+      showAlert(apiMessage, "error");
+      setIsSubmitting(false);
     }
   };
 
   const cancelUpdate = () => {
     clearInterval(timer);
+    setTimer(null);
     setShowModal(false);
     setCountdown(10);
+    setIsSubmitting(false); // reset
   };
 
   return (
@@ -226,7 +251,10 @@ export default function GoldManagementPage() {
                     onFocus={() => setInputFocused(true)}
                     onBlur={() => setInputFocused(false)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") handleUpdateClick("buy");
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (!isSubmitting) handlePasswordSubmit();
+                      }
                     }}
                     className="rounded-lg bg-neutral-800 border border-neutral-700 px-3 py-2 text-sm flex-1 w-full"
                     placeholder="Buy Price"
@@ -242,7 +270,7 @@ export default function GoldManagementPage() {
             </div>
             <div className="col-span-1 md:col-span-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4 overflow-x-auto">
               <h3 className="font-semibold mb-3">Buy Price & Chart</h3>
-              <div className="h-48 w-full overflow-x-hidden">
+              <div className="h-48 w-full overflow-hidden">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartBuyData}>
                     <defs>
@@ -328,7 +356,7 @@ export default function GoldManagementPage() {
             </div>
             <div className="col-span-1 md:col-span-6 rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
               <h3 className="font-semibold mb-3">Sell Price & Chart</h3>
-              <div className="h-48 w-full overflow-x-hidden">
+              <div className="h-48 w-full overflow-hidden">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartSellData}>
                     <defs>
@@ -386,9 +414,7 @@ export default function GoldManagementPage() {
 
             <h3 className="text-lg font-semibold mb-4 text-center">
               {countdown === 10
-                ? `Enter Password to Update ${
-                    modalType === "buy" ? "Buy" : "Sell"
-                  } Price`
+                ? `Enter Passcode to Confirm  `
                 : `Updating in ${countdown}s...`}
             </h3>
 
@@ -398,7 +424,7 @@ export default function GoldManagementPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
+                  placeholder="Enter passcode"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       handlePasswordSubmit();

@@ -18,9 +18,19 @@ export default function ReportBuySellChart() {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+useEffect(() => {
+  // Initial fetch
+  fetchChartData();
+
+  // Set interval to fetch every 500ms
+  const interval = setInterval(() => {
     fetchChartData();
-  }, []);
+  }, 500);
+
+  // Cleanup interval on unmount
+  return () => clearInterval(interval);
+}, []);
+
 
   const fetchChartData = async () => {
     try {
@@ -103,7 +113,7 @@ export default function ReportBuySellChart() {
                 background: "#0a0a0a",
                 border: "1px solid #262626",
               }}
-              formatter={(value) => value.toLocaleString()}
+              formatter={(value) => `${value.toLocaleString()} ရွေး`}
             />
             <Area
               type="monotone"

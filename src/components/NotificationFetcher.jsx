@@ -28,6 +28,7 @@ export default function NotificationFetcher() {
           { url: "http://38.60.244.74:3000/buyTable", type: "buy-table", message: "New buy record has been approved!" },
           { url: "http://38.60.244.74:3000/sellTable", type: "sell-table", message: "New sell record has been approved!" },
           { url: "http://38.60.244.74:3000/deliTable", type: "delivery-table", message: "New delivery record has been approved!" },
+          { url: "http://38.60.244.74:3000/reject", type: "reject" }
         ];
 
         const responses = await Promise.all(endpoints.map((e) => fetch(e.url).then((r) => r.json())));
@@ -94,6 +95,35 @@ export default function NotificationFetcher() {
             return;
           }
 
+          if (e.type === "reject") {
+            const rejectData = Array.isArray(data?.data) ? data.data : [];
+            currentCount = rejectData.length;
+
+            if (currentCount > prevCount && rejectData.length > 0) {
+              const newRow = rejectData[0];
+              const rowType = newRow?.type?.toLowerCase?.();
+              if (!rowType) return;
+
+              const messageMap = {
+                buy: "New buy record has been rejected!",
+                sell: "New sell record has been rejected!",
+                delivery: "New delivery record has been rejected!",
+              };
+
+              if (messageMap[rowType]) {
+                newNotis.push({
+                  type: `reject-${rowType}`,
+                  message: messageMap[rowType],
+                  time: new Date().toLocaleTimeString(),
+                  read: false,
+                });
+              }
+            }
+
+            localStorage.setItem(key, currentCount.toString());
+            return;
+          }
+
           const dataArr = Array.isArray(data?.data)
             ? data.data
             : Array.isArray(data)
@@ -126,7 +156,7 @@ export default function NotificationFetcher() {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 1000);
+    const interval = setInterval(fetchData, 500);
     return () => clearInterval(interval);
   }, []);
 
